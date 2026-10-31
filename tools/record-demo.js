@@ -60,6 +60,9 @@ const style = (id) => `<style>
   [data-intercom-target="conversation-space"] { grid-column: 1; padding: 22px 24px; background: #fafbfc; overflow: hidden; }
   .email-html-content--inbound { background: #fff; border: 1px solid #e6e8ec; border-radius: 12px; padding: 14px 16px; max-width: 620px; box-shadow: 0 1px 2px rgba(15, 23, 42, .04); }
   .email-html-content--inbound::before { content: "${CONVERSATIONS[id].name} · Email · ${CONVERSATIONS[id].time}"; display: block; font-size: 12px; color: #8a93a3; margin-bottom: 6px; }
+  .demo-sent { margin: 16px 0 0 auto; max-width: 620px; background: #eef3ff; border: 1px solid #d6e0fb; border-radius: 12px; padding: 14px 16px; }
+  .demo-sent::before { content: "Maya Lindqvist · Email · 10:47 · Sent"; display: block; font-size: 12px; color: #5b6472; margin-bottom: 6px; }
+  .demo-sent p { margin: 0; min-height: 1.45em; }
   [data-testid="composer-orchestrator"] { grid-column: 1; border-top: 1px solid #e6e8ec; padding: 12px 24px 16px; background: #fff; }
   .inbox2__composer__container { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
   .inbox2__composer__container > button { border: 0; border-radius: 6px; padding: 6px 14px; background: #eef0f3; font: inherit; }
@@ -196,7 +199,21 @@ async function record(playwrightModule) {
   await caption('The reply goes above the signature');
   await placeCaretAtTop(page);
   await page.keyboard.type('Hallo Lena, Ihr Paket ist unterwegs und kommt morgen an.', { delay: 45 });
-  await page.waitForTimeout(2500);
+  await page.waitForTimeout(1200);
+  await caption('Send');
+  await page.locator('.inbox2__composer__container > button').last().click();
+  await page.evaluate(() => {
+    const editor = document.querySelector('[contenteditable="true"]');
+    const part = document.createElement('div');
+    part.className = 'demo-sent';
+    part.dataset.testid = 'teammate-email-reply-part';
+    part.innerHTML = `<div class="intercom-interblocks-html">${editor.innerHTML}</div>`;
+    document.querySelector('[data-intercom-target="conversation-space"]').appendChild(part);
+    editor.innerHTML = '<p><br></p>';
+    editor.blur();
+  });
+  await caption('Sent: signed for Alderpoint, in German');
+  await page.waitForTimeout(3500);
   const video = await page.video().path();
   await context.close();
   return { directory, video };
