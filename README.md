@@ -113,7 +113,7 @@ A missing term list is exit code 2, not a pass. CI runs
 
 There is no Chrome Web Store listing; the extension is loaded unpacked.
 
-1. Get the extension folder: unzip `Intercom-Support-Assistant-v<version>.zip`
+1. Get the extension folder: unzip `Intercom-Support-Assistant-v<version>.zip` into a new folder
    from a release, or use `src/` from a clone of this repository.
 2. Open `chrome://extensions`, turn on **Developer mode**, click **Load
    unpacked**, and pick that folder.
