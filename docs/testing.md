@@ -82,6 +82,12 @@ unless `ISA_PLAYWRIGHT_MODULE` points at a `playwright-core` entry file:
 ISA_PLAYWRIGHT_MODULE=/path/to/node_modules/playwright-core/index.js npm run test:runtime
 ```
 
+The README demo GIF is recorded the same way, with Chromium and `ffmpeg`:
+
+```bash
+ISA_PLAYWRIGHT_MODULE=/path/to/node_modules/playwright-core/index.js node tools/record-demo.js
+```
+
 ## What is not covered
 
 - The live Inbox. Fixtures follow captured markup, but Intercom can change it

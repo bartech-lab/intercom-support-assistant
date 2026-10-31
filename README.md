@@ -92,10 +92,11 @@ each view went to zero at once.
 
 ## Release process
 
-Four-part versions. `tools/bump-version.js` plans and applies a bump;
+Four-part versions. `tools/bump-version.js` plans and applies a bump.
 `npm run verify` runs six gates (tests, syntax, whitespace, release consistency,
-build with artifact verification, ZIP check); `tools/release-plan.js` checks
-that the release is publishable and prints the commands. Nothing tags or
+build with artifact verification, ZIP check) and leaves the ZIP that a release
+attaches; it is the same folder as `src/`, packed. `tools/release-plan.js`
+checks that the release is publishable and prints the commands. Nothing tags or
 publishes on its own. See [RELEASE.md](RELEASE.md).
 
 ## No real data, enforced
@@ -108,19 +109,26 @@ URLs, workspace ids and secrets, plus a term list that CI receives as a secret.
 A missing term list is exit code 2, not a pass. CI runs
 [gitleaks](https://github.com/gitleaks/gitleaks) as a second engine.
 
-## Install and develop
+## Install
+
+There is no Chrome Web Store listing; the extension is loaded unpacked.
+
+1. Get the extension folder: unzip `Intercom-Support-Assistant-v<version>.zip`
+   from a release, or use `src/` from a clone of this repository.
+2. Open `chrome://extensions`, turn on **Developer mode**, click **Load
+   unpacked**, and pick that folder.
+3. Open `app.intercom.com`.
+
+Brands and signatures live in `src/intercom-config.js`. After changing them,
+run `node tools/update-preview.js` to regenerate the workspace preview data.
+
+## Develop
 
 ```bash
 npm ci
-npm test
+npm test          # the fast suite
+npm run verify    # the full release gate; also builds the ZIP
 ```
-
-Load `src/` as an unpacked extension in `chrome://extensions`, then open
-`app.intercom.com`. Brands and signatures live in `src/intercom-config.js`;
-regenerate the preview data with `node tools/update-preview.js`.
-
-To re-record the demo, point `ISA_PLAYWRIGHT_MODULE` at a `playwright-core`
-entry file and run `node tools/record-demo.js`. It needs Chromium and `ffmpeg`.
 
 ## License
 
