@@ -9,7 +9,7 @@ const USAGE = `Usage: leak-scan.mjs [--history] [--generic-only] [--reveal] [pat
 
 Scans every file under <path> (default: .) for real data and secrets.
 --history       also scan every blob, commit message and identity in the git history
---generic-only  run without the private denylist (for forks without the CI secret)
+--generic-only  run without the private denylist (CI, and any clone without it)
 --reveal        print the matched text (local use only, never in CI logs)
 
 The private denylist comes from $LEAK_DENYLIST (file content), $LEAK_DENYLIST_FILE,
