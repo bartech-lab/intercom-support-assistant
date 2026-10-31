@@ -10,17 +10,35 @@ const ROOT = path.join(__dirname, '..');
 const EXTENSION = path.join(ROOT, 'src');
 const OUTPUT = path.join(ROOT, 'docs', 'screenshots', 'demo.gif');
 const TEAM = '900101';
-const CONVERSATION = '900475100038417';
-const URL = `https://app.intercom.com/a/inbox/demo1234/inbox/team/${TEAM}/conversation/${CONVERSATION}`;
+const ITALIAN = '900475100000101';
+const GERMAN = '900475100038417';
+const CONVERSATIONS = {
+  [ITALIAN]: {
+    name: 'Marco Bellini',
+    subject: 'Taglia sbagliata',
+    time: '10:39',
+    location: 'Bologna, Italy',
+    text: 'Buongiorno, ho ricevuto la giacca nella taglia sbagliata. Posso cambiarla con una M? Grazie mille.'
+  },
+  [GERMAN]: {
+    name: 'Lena Hofmann',
+    subject: 'Where is my parcel?',
+    time: '10:42',
+    location: 'Freiburg, Germany',
+    text: 'Hallo, ich habe meine Bestellung noch nicht bekommen. Können Sie bitte nachsehen, wo das Paket gerade ist? Danke!'
+  }
+};
+const conversationUrl = (id) => `https://app.intercom.com/a/inbox/demo1234/inbox/team/${TEAM}/conversation/${id}`;
 const SIZE = { width: 1600, height: 900 };
 const GIF_WIDTH = 1280;
 
-const STYLE = `<style>
+const style = (id) => `<style>
   * { box-sizing: border-box; }
   body { margin: 0; height: 100vh; display: grid; grid-template-columns: 230px 330px 1fr; grid-template-rows: 44px 1fr;
     font: 14px/1.45 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #1f2430; background: #fff; overflow: hidden; }
   .demo-bar { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; padding: 0 18px; background: #1a1b20; color: #fff; font-weight: 600; }
   .demo-bar span { color: #9aa4b2; font-weight: 400; font-size: 13px; }
+  .demo-bar strong { margin-left: auto; color: #fff; font-size: 15px; font-weight: 600; }
   nav { grid-row: 2; background: #f6f6f8; border-right: 1px solid #e6e8ec; padding: 14px 10px; }
   nav::before { content: "Inbox"; display: block; font-size: 18px; font-weight: 700; padding: 0 8px 12px; }
   nav a { display: flex; align-items: center; justify-content: space-between; padding: 7px 10px; border-radius: 8px; color: #1f2430; text-decoration: none; }
@@ -31,17 +49,17 @@ const STYLE = `<style>
   [data-intercom-target="filter-button"] { padding: 14px 16px 10px; border-bottom: 1px solid #eef0f3; }
   [data-intercom-target="filter-button"] button { border: 0; background: none; font: inherit; font-weight: 600; padding: 0; }
   [data-intercom-target-conversation-list] > a { display: flex; gap: 10px; padding: 12px 16px; border-bottom: 1px solid #f0f1f4; color: inherit; text-decoration: none; }
-  [data-intercom-target-conversation-list] > a[data-conversation-id="${CONVERSATION}"] { background: #eef3ff; box-shadow: inset 3px 0 0 #1d4ed8; }
+  [data-intercom-target-conversation-list] > a[data-conversation-id="${id}"] { background: #eef3ff; box-shadow: inset 3px 0 0 #1d4ed8; }
   .inbox2__avatar { width: 30px; height: 30px; border-radius: 50%; background: #dfe5f1; color: #33415c; display: grid; place-items: center; font-weight: 600; font-size: 13px; }
   [data-intercom-target-conversation-list] .flex-col { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
   [data-intercom-target-conversation-list] .flex-row { display: flex; align-items: center; }
   [data-intercom-target-conversation-list] .line-clamp-1, [data-intercom-target-conversation-list] .line-clamp-2 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #5b6472; font-size: 13px; }
   [data-intercom-target-conversation-list] .text-right { font-size: 12px; color: #8a93a3; text-align: right; }
   #app { grid-row: 2; display: grid; grid-template-columns: 1fr 300px; grid-template-rows: auto 1fr auto; min-height: 0; }
-  #app::before { content: "Where is my parcel?"; grid-column: 1; padding: 14px 24px; border-bottom: 1px solid #eef0f3; font-size: 16px; font-weight: 700; }
+  #app::before { content: "${CONVERSATIONS[id].subject}"; grid-column: 1; padding: 14px 24px; border-bottom: 1px solid #eef0f3; font-size: 16px; font-weight: 700; }
   [data-intercom-target="conversation-space"] { grid-column: 1; padding: 22px 24px; background: #fafbfc; overflow: hidden; }
   .email-html-content--inbound { background: #fff; border: 1px solid #e6e8ec; border-radius: 12px; padding: 14px 16px; max-width: 620px; box-shadow: 0 1px 2px rgba(15, 23, 42, .04); }
-  .email-html-content--inbound::before { content: "Lena Hofmann · Email · 10:42"; display: block; font-size: 12px; color: #8a93a3; margin-bottom: 6px; }
+  .email-html-content--inbound::before { content: "${CONVERSATIONS[id].name} · Email · ${CONVERSATIONS[id].time}"; display: block; font-size: 12px; color: #8a93a3; margin-bottom: 6px; }
   [data-testid="composer-orchestrator"] { grid-column: 1; border-top: 1px solid #e6e8ec; padding: 12px 24px 16px; background: #fff; }
   .inbox2__composer__container { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
   .inbox2__composer__container > button { border: 0; border-radius: 6px; padding: 6px 14px; background: #eef0f3; font: inherit; }
@@ -50,7 +68,8 @@ const STYLE = `<style>
   .inbox2__composer__container svg { display: none; }
   [data-conversation-reply-composer] { flex-basis: 100%; order: 2; }
   .inbox2__composer__container > button:last-child { order: 4; }
-  .isa-draft-language-picker { order: 3; }
+  .isa-draft-language-picker { order: 1; }
+  body .isa-draft-language-picker > * { font-size: 13px; line-height: 18px; padding: 4px 9px; }
   [data-testid="composer-editor-area"] { border: 1px solid #d7dce5; border-radius: 10px; min-height: 150px; padding: 12px 14px; }
   [contenteditable] { outline: none; min-height: 126px; }
   [contenteditable] p { margin: 0; min-height: 1.45em; }
@@ -68,8 +87,8 @@ const STYLE = `<style>
 function listRows() {
   const row = (id, name, subject, preview, age) => fx.conversationListRow({ conversationId: id, name, subject, preview, age, teamId: TEAM });
   return [
-    row('900475100000101', 'Marco Bellini', 'Taglia sbagliata', 'Buongiorno, ho ricevuto la giacca nella taglia sbagliata…', '3m'),
-    row('900475100038417', 'Lena Hofmann', 'Where is my parcel?', 'Hallo, ich habe meine Bestellung noch nicht bekommen…', '6m'),
+    row(ITALIAN, 'Marco Bellini', 'Taglia sbagliata', 'Buongiorno, ho ricevuto la giacca nella taglia sbagliata…', '3m'),
+    row(GERMAN, 'Lena Hofmann', 'Where is my parcel?', 'Hallo, ich habe meine Bestellung noch nicht bekommen…', '6m'),
     row('900475100052963', 'Sophie Bernier', 'Modifier l’adresse', 'Bonjour, est-ce que je peux encore modifier l’adresse…', '14m'),
     row('900475100067148', 'Jonas Weber', 'Rücksendung', 'Wie schicke ich die Schuhe zurück?', '41m'),
     row('900475100071395', 'Anke de Vries', 'Bestelling geannuleerd?', 'Hallo, waarom is mijn bestelling geannuleerd?', '1h'),
@@ -77,7 +96,8 @@ function listRows() {
   ];
 }
 
-function demoPage() {
+function demoPage(id) {
+  const current = CONVERSATIONS[id];
   const nav = fx.inboxNav([
     fx.yourInboxNavLink({ count: 2 }),
     fx.inboxNavLink({ teamId: '900102', label: 'Urgent Alderpoint', count: 1 }),
@@ -98,17 +118,17 @@ function demoPage() {
       ]
     }),
     userDetails: fx.userDetailsSection([
-      fx.userDetailRow('Name', '<span>Lena Hofmann</span>'),
-      fx.userDetailRow('Location', '<span>Freiburg, Germany</span>')
+      fx.userDetailRow('Name', `<span>${current.name}</span>`),
+      fx.userDetailRow('Location', `<span>${current.location}</span>`)
     ]),
     conversation: fx.conversationSpace({
-      customerText: 'Hallo, ich habe meine Bestellung noch nicht bekommen. Können Sie bitte nachsehen, wo das Paket gerade ist? Danke!'
+      customerText: current.text
     }),
     composer: fx.composer({ mode: 'email' })
   });
   return html
     .replace('<html>', '<html lang="en">')
-    .replace('<body>', `<head><meta charset="utf-8">${STYLE}</head><body><div class="demo-bar">Invented demo inbox<span>the real extension, loaded unpacked in Chromium</span></div>`);
+    .replace('<body>', `<head><meta charset="utf-8">${style(id)}</head><body><div class="demo-bar">Invented demo inbox<span>the real extension, loaded unpacked in Chromium</span><strong></strong></div>`);
 }
 
 async function placeCaretAtTop(page) {
@@ -139,21 +159,41 @@ async function record(playwrightModule) {
   if (!context.serviceWorkers().length) await context.waitForEvent('serviceworker');
   await context.close();
   context = await launch(true);
-  await context.route('**/*', route => (route.request().url().startsWith('https://app.intercom.com/a/inbox/')
-    ? route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: demoPage() })
-    : route.continue()));
+  await context.route('**/*', (route) => {
+    const url = route.request().url();
+    if (!url.startsWith('https://app.intercom.com/a/inbox/')) return route.continue();
+    const id = Object.keys(CONVERSATIONS).find(key => url.includes(`/conversation/${key}`)) || ITALIAN;
+    return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: demoPage(id) });
+  });
   const page = context.pages()[0] || await context.newPage();
-  await page.goto(URL);
-  const editor = page.locator('[contenteditable="true"]').first();
-  await editor.evaluate(node => { node.spellcheck = false; });
-  await page.waitForTimeout(1800);
-  await editor.click();
-  await page.waitForSelector('.isa-draft-language-picker', { timeout: 10000 });
-  await page.waitForTimeout(2200);
+  const caption = (text) => page.evaluate((value) => { document.querySelector('.demo-bar strong').textContent = value; }, text);
+  const openReply = async () => {
+    const editor = page.locator('[contenteditable="true"]').first();
+    await editor.evaluate(node => { node.spellcheck = false; });
+    await editor.click();
+    await page.waitForSelector('.isa-draft-language-picker', { timeout: 10000 });
+  };
+  await page.goto(conversationUrl(ITALIAN));
+  await caption('An Italian message: click Reply');
+  await page.waitForTimeout(1600);
+  await openReply();
+  await caption('Italian signature, picked automatically');
+  await page.waitForTimeout(2600);
+  await caption('Open a German message');
+  await page.waitForTimeout(900);
+  await page.locator(`a[data-conversation-id="${GERMAN}"]`).click();
+  await page.waitForURL(`**/conversation/${GERMAN}*`);
+  await caption('Open a German message');
+  await page.waitForTimeout(1400);
+  await openReply();
+  await caption('German signature, picked automatically');
+  await page.waitForTimeout(2600);
+  await caption('One click switches the language');
   for (const code of ['FR', 'NL', 'DE']) {
     await page.locator('.isa-draft-language-picker > *', { hasText: code }).first().click();
-    await page.waitForTimeout(1600);
+    await page.waitForTimeout(1500);
   }
+  await caption('The reply goes above the signature');
   await placeCaretAtTop(page);
   await page.keyboard.type('Hallo Lena, Ihr Paket ist unterwegs und kommt morgen an.', { delay: 45 });
   await page.waitForTimeout(2500);
