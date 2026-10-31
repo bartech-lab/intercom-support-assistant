@@ -105,8 +105,9 @@ Every fixture is invented: brands on `*.example`, ids in the `900…` range,
 addresses on `example.com`. `scripts/leak-scan.mjs` keeps it that way. It scans
 every file, file name, and PNG and GIF text block, and with `--history` every
 commit, for emails, foreign hosts, long numeric and hex ids, Intercom ids in
-URLs, workspace ids and secrets, plus a term list that CI receives as a secret.
-A missing term list is exit code 2, not a pass. CI runs
+URLs, workspace ids and secrets. CI runs those public rules on every push. A
+private term list stays off GitHub entirely: local commit and push hooks scan
+with it, and a missing list is exit code 2, not a pass. CI also runs
 [gitleaks](https://github.com/gitleaks/gitleaks) as a second engine.
 
 ## Install
