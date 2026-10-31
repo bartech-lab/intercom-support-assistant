@@ -184,15 +184,16 @@ test('--history finds a plant that a later commit deleted, and a non-noreply ide
   const root = tempDir();
   const identity = {
     GIT_AUTHOR_NAME: 'Dev',
-    GIT_AUTHOR_EMAIL: 'dev@users.noreply.github.com',
+    GIT_AUTHOR_EMAIL: join('4817', '2093', '+dev@users.noreply.github.com'),
     GIT_COMMITTER_NAME: 'Dev',
-    GIT_COMMITTER_EMAIL: 'dev@users.noreply.github.com'
+    GIT_COMMITTER_EMAIL: join('4817', '2093', '+dev@users.noreply.github.com')
   };
   const git = (args, env = identity) => execFileSync('git', ['-C', root, ...args], {
     env: { PATH: process.env.PATH, HOME: root, GIT_CONFIG_NOSYSTEM: '1', ...env }
   });
   git(['init', '-q']);
   fs.writeFileSync(path.join(root, 'notes.md'), `contact ${PLANTS.email}\n`);
+  fs.writeFileSync(path.join(root, 'package-lock.json'), `{\n  "packages": {\n    "node_modules/x": {\n      "resolved": "${join('https://', 'registry.npmjs.org/x/-/x-1.0.0.tgz')}",\n      "funding": {\n        "url": "${join('https://', 'funding.acme-corp', '.io/x')}"\n      }\n    }\n  }\n}\n`);
   git(['add', '.']);
   git(['commit', '-qm', 'add notes']);
   fs.writeFileSync(path.join(root, 'notes.md'), 'nothing here\n');
@@ -203,6 +204,7 @@ test('--history finds a plant that a later commit deleted, and a non-noreply ide
   assert.equal(history.status, 1);
   assert.match(history.stdout, /:notes\.md:1 email$/m);
   assert.doesNotMatch(history.stdout, /commit-identity/);
+  assert.doesNotMatch(history.stdout, /package-lock\.json|numeric-id/);
 
   git(['commit', '-q', '--allow-empty', '-m', 'empty'], { ...identity, GIT_AUTHOR_EMAIL: 'dev@example.com' });
   assert.match(run(['--history', root], { LEAK_DENYLIST: DENYLIST }).stdout, /commit-identity/);

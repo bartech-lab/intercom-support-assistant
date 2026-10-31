@@ -60,7 +60,7 @@ const SECRET_SHAPES = [
 ];
 const SECRET_ASSIGNMENT = /\b[\w-]*(?:token|secret|password|passwd|api[_-]?key|bearer|auth[_-]?key)[\w-]*["']?\s*[:=]\s*["'`]([^"'`\s]{12,})["'`]/i;
 
-const isPackageLock = (path) => /(^|\/)package-lock\.json$/.test(path);
+const isPackageLock = (path) => /(^|[/:])package-lock\.json$/.test(path);
 
 function parseArgs(argv) {
   const opts = { history: false, genericOnly: false, reveal: false, root: '.' };
@@ -338,7 +338,7 @@ function scanHistory(root, denyRules) {
       const email = (who.match(/<([^>]*)>/) || [])[1] || '';
       if (!/@users\.noreply\.github\.com$/.test(email)) findings.push({ path: `commit ${sha.slice(0, 10)}`, line: 0, rule: 'commit-identity', match: email });
     }
-    findings.push(...scanText(entry, `commit ${sha.slice(0, 10)}`, denyRules));
+    findings.push(...scanText(entry.replace(/<\d+\+([\w-]+@users\.noreply\.github\.com)>/g, '<$1>'), `commit ${sha.slice(0, 10)}`, denyRules));
   }
   return { findings, blobs, commits };
 }
