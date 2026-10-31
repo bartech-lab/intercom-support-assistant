@@ -1,0 +1,75 @@
+{
+  "manifest_version": 3,
+  "name": "Intercom Support Assistant",
+  "version": "1.0.0.0",
+  "description": "Localized signatures, close safeguards, new-message alerts, and self-deleting notes for the Intercom inbox.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": [
+    "scripting",
+    "tabs",
+    "storage",
+    "notifications"
+  ],
+  "host_permissions": [
+    "https://app.intercom.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://app.intercom.com/*"
+      ],
+      "js": [
+        "intercom-page-hook.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "https://app.intercom.com/*"
+      ],
+      "js": [
+        "shared-runtime.js",
+        "intercom-config.js",
+        "signature-normalizer.js",
+        "alert-sounds.js",
+        "dom-capture.js",
+        "intercom-util.js",
+        "intercom-language.js",
+        "intercom-signatures.js",
+        "intercom-dom.js",
+        "intercom-sidebar.js",
+        "intercom-list-state.js",
+        "intercom-duplicates.js",
+        "intercom-row-decorations.js",
+        "intercom-context.js",
+        "intercom-bridge.js",
+        "intercom-composer.js",
+        "intercom-attachments.js",
+        "intercom-guards.js",
+        "intercom-autoselect.js",
+        "intercom-alerts-ui.js",
+        "intercom-temporary-notes.js",
+        "intercom-note-cleanup.js",
+        "intercom-temporary-notes-ui.js",
+        "intercom-note-runtime.js",
+        "intercom-boot.js"
+      ]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  }
+}

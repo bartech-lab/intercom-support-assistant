@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intercom Support Assistant: Workspace</title>
+  <script src="theme.js"></script>
+  <link rel="stylesheet" href="workspace-theme.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      padding: 24px 0 48px;
+      line-height: 1.5;
+    }
+    body,
+    .preview-card,
+    .toolbar,
+    .status,
+    .error-message {
+      transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .page {
+      width: calc(100% - 40px);
+      margin-inline: auto;
+    }
+
+    .toolbar {
+      position: sticky;
+      top: 12px;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: color-mix(in srgb, var(--surface) 86%, transparent);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--hairline);
+      border-radius: 12px;
+      box-shadow: 0 6px 18px var(--shadow);
+      margin-bottom: 24px;
+      padding: 12px 16px;
+    }
+    .search-box { flex: 1; min-width: 0; }
+    .search-box input {
+      width: 100%;
+      border: 1px solid var(--hairline);
+      border-radius: 8px;
+      background: var(--surface-2);
+      color: var(--ink);
+      font-size: 14px;
+      padding: 8px 12px;
+    }
+    .search-box input::placeholder { color: var(--ink-muted); }
+    .search-box input:focus {
+      border-color: var(--accent);
+      outline: none;
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+    }
+    .result-count {
+      flex: 0 0 auto;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--ink-muted);
+      white-space: nowrap;
+      letter-spacing: 0.01em;
+    }
+
+    .status,
+    .error-message {
+      background: var(--surface);
+      border: 1px solid var(--hairline);
+      border-radius: 12px;
+      box-shadow: 0 6px 18px var(--shadow);
+      color: var(--ink-muted);
+      margin-bottom: 24px;
+      padding: 18px;
+    }
+    .error-message {
+      border: 1px solid var(--hairline);
+      border-left: 4px solid var(--accent);
+      color: var(--ink);
+    }
+
+    .section-head {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      margin: 24px 0 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--hairline);
+    }
+    .section-title {
+      color: var(--ink);
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+    .section-count {
+      margin-left: auto;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--ink-muted);
+      background: var(--surface-2);
+      border: 1px solid var(--hairline);
+      border-radius: 999px;
+      padding: 3px 10px;
+    }
+
+    .cards-grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+    .preview-card {
+      background: var(--surface);
+      border: 1px solid var(--hairline);
+      border-radius: 12px;
+      box-shadow: 0 8px 22px var(--shadow);
+      overflow: hidden;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .preview-card:hover {
+      border-color: var(--ink-muted);
+    }
+    .card-top {
+      align-items: center;
+      color: var(--ink);
+      display: flex;
+      flex-direction: row;
+      gap: 12px;
+      padding: 16px;
+      padding-right: 56px;
+      position: relative;
+    }
+    .copy-btn {
+      align-items: center;
+      background: var(--surface);
+      border: 1px solid var(--hairline);
+      border-radius: 8px;
+      color: var(--ink);
+      cursor: pointer;
+      display: inline-flex;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1;
+      padding: 7px 8px;
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .copy-btn { min-width: 36px; min-height: 36px; }
+    .copy-btn:hover { background: var(--surface-2); border-color: var(--ink-muted); }
+    .copy-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .copy-btn.copied { color: var(--accent); }
+    .copy-btn svg { display: block; }
+    .copy-label { letter-spacing: 0.02em; }
+
+    .card-top { background: var(--surface-2); border-bottom: 1px solid var(--hairline); }
+    .company-card .card-top { border-top: 3px solid var(--accent); }
+    .team-card .card-top { border-top: 3px solid var(--ink-muted); }
+    .brand-icon { width: 30px; height: 30px; object-fit: contain; flex: 0 0 auto; }
+    .brand-name { font-size: 18px; font-weight: 700; line-height: 1.2; }
+    .language-tabs {
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--hairline);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+    }
+    .lang-tab {
+      background: transparent;
+      border: 0;
+      color: var(--ink-muted);
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 11px 8px;
+      position: relative;
+    }
+    .lang-tab.active { background: var(--surface); color: var(--accent); }
+    .lang-tab.active::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 2px;
+      background: var(--accent);
+    }
+    .lang-tab.empty { color: #c2410c; }
+    :root[data-theme="dark"] .lang-tab.empty { color: #f59e6b; }
+
+    .signature-preview {
+      min-height: 150px;
+      padding: 16px 24px 24px;
+      background: var(--surface);
+    }
+    .signature-content {
+      display: none;
+      font-size: 14px;
+      line-height: 1.65;
+      word-break: break-word;
+      color: var(--ink);
+    }
+    .signature-content.active { display: block; }
+    .signature-content a { color: var(--link); text-decoration: none; }
+    .signature-content a:hover { text-decoration: underline; }
+    .empty-signature { color: var(--ink-muted); font-style: italic; }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 700px) {
+      .page { width: calc(100% - 32px); }
+      .cards-grid { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      body, .preview-card, .toolbar, .status, .error-message { transition: none; }
+      .preview-card:hover { transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="app-header">
+      <img src="icons/isa-logo.svg" alt="">
+      <h1>Intercom Support Assistant</h1>
+      <button type="button" class="theme-toggle" data-isa-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+    <nav class="workspace-nav" aria-label="Workspace">
+      <a href="#signatures" data-section="signatures" aria-current="page">Signatures</a>
+      <a href="#settings" data-section="settings">Settings</a>
+      <a href="#tools" data-section="tools">Tools</a>
+    </nav>
+    <main>
+    <section id="signatures" data-workspace-section aria-label="Signatures">
+    <div id="status" class="status">Loading signatures...</div>
+    <div id="errorMessage" class="error-message hidden"></div>
+
+    <div id="content" class="hidden">
+      <div class="toolbar">
+        <div class="search-box">
+          <input id="searchInput" type="text" placeholder="Search signatures…" aria-label="Search signatures">
+        </div>
+        <span class="result-count" id="resultCount"></span>
+      </div>
+
+      <p id="searchEmpty" class="status" hidden>No signatures match your search. Try another name.</p>
+      <div class="section-head">
+        <h2 class="section-title">Brand signatures</h2>
+        <span class="section-count" id="companyCount"></span>
+      </div>
+      <section class="cards-grid" id="companyGrid"></section>
+
+      <div class="section-head">
+        <h2 class="section-title">Team signature</h2>
+        <span class="section-count" id="teamCount"></span>
+      </div>
+      <section class="cards-grid" id="teamGrid"></section>
+    </div>
+    </section>
+    <section id="settings" data-workspace-section aria-labelledby="settingsTitle" hidden>
+      <h2 id="settingsTitle" class="page-title">Settings</h2>
+      <div class="settings-grid">
+        <section class="settings-group" aria-label="Intercom">
+          <div id="isa-alert-settings" data-isa-expanded="true"></div>
+        </section>
+      </div>
+    </section>
+    <section id="tools" data-workspace-section aria-labelledby="toolsTitle" hidden>
+      <h2 id="toolsTitle" class="page-title">Tools</h2>
+      <div class="tools-grid">
+        <div class="tools-column">
+          <div id="isa-support-tools" data-isa-expanded="true"></div>
+        </div>
+        <div class="tools-column">
+          <div id="isa-settings-backup" data-isa-expanded="true"></div>
+          <div id="isa-debug-flags" data-isa-expanded="true"></div>
+        </div>
+      </div>
+    </section>
+    </main>
+    <div id="copyStatus" class="copy-status" role="status" aria-live="polite"></div>
+  </div>
+
+  <script src="signatures-data.js"></script>
+  <script src="alert-sounds.js"></script>
+  <script src="alert-settings-ui.js"></script>
+  <script src="support-tools-ui.js"></script>
+  <script src="preview-page.js"></script>
+</body>
+</html>

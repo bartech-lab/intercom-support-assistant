@@ -1,0 +1,19 @@
+{
+  "name": "intercom-support-assistant",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Development tooling for the Intercom Support Assistant Chrome extension. The extension ships as plain files with no build step.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "test": "node --test --test-concurrency=8 \"test/**/*.test.js\"",
+    "test:runtime": "node --test --test-concurrency=1 test/ui/hover-chromium.test.js",
+    "verify": "node tools/verify-local.js",
+    "leak-scan": "node scripts/leak-scan.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "^30.1.3"
+  }
+}

@@ -1,0 +1,12 @@
+node_modules/
+dist/
+Intercom-Support-Assistant*.zip
+
+*.log
+*.tmp
+*.mhtml
+.DS_Store
+.vscode/
+.idea/
+
+scratchpad/
