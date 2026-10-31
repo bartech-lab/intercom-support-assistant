@@ -142,7 +142,7 @@ test('a note composer renders no language picker', () => {
 
 test('an excluded inbox, which never signs, renders no language picker', () => {
   const win = loadExtension(fx.inboxHtml({
-    sidebar: fx.sidebarSection({ teamInbox: 'Tier 2', conversationAttrs: [fx.conversationAttrRow('9100', 'Brand', 'Brightwell')] }),
+    sidebar: fx.sidebarSection({ teamInbox: 'Tier 2', conversationAttrs: [fx.conversationAttrRow('9307', 'Brand', 'Brightwell')] }),
     conversation: fx.conversationSpace({ customerText: 'Hello' }),
     composer: fx.composer({ mode: 'email' })
   }), { url: 'https://app.intercom.com/a/inbox/demo1234/inbox/team/9009870/conversation/456' });
@@ -163,6 +163,22 @@ test('picking a language in a conversation rewrites an untouched reply signature
   assert.match(editor.innerHTML, /Kundenservice bei/);
   assert.strictEqual(replyActiveCode(win), 'DE');
   assert.strictEqual(win.activeSignatureLanguage(), 'german');
+});
+
+test('a pick keeps the empty line above the signature, on the first and the second switch', () => {
+  const win = loadConversation();
+  const editor = win.document.querySelector('[contenteditable="true"]');
+  const typingLine = editor.innerHTML;
+  win.insertSignature(editor);
+  assert.ok(editor.innerHTML.startsWith(`${typingLine}--`), editor.innerHTML);
+
+  replyChip(win, 'DE').dispatchEvent(new win.MouseEvent('click', { bubbles: true, cancelable: true }));
+  assert.match(editor.innerHTML, /Kundenservice bei/);
+  assert.ok(editor.innerHTML.startsWith(`${typingLine}--`), editor.innerHTML);
+
+  replyChip(win, 'FR').dispatchEvent(new win.MouseEvent('click', { bubbles: true, cancelable: true }));
+  assert.match(editor.innerHTML, /Service client chez/);
+  assert.ok(editor.innerHTML.startsWith(`${typingLine}--`), editor.innerHTML);
 });
 
 test('a reply the agent has typed over is never rewritten by a pick', () => {

@@ -349,7 +349,7 @@ function replaceUntouchedSignature(language) {
   const signature = signatureForLanguage(language);
   if (!signature) return false;
 
-  record.editor.innerHTML = '';
+  record.editor.innerHTML = record.before;
   insertSignatureHtml(record.editor, applyGreetingVariation(signature), language);
   return true;
 }
@@ -510,7 +510,7 @@ function insertSignatureHtml(editor, html, language = null) {
   const before = editor.innerHTML;
   editor.innerHTML = before + signatureHtml;
   const readback = editor.innerHTML;
-  lastInsertedSignature = language ? { editor, html: readback, language } : null;
+  lastInsertedSignature = language ? { editor, html: readback, language, before } : null;
   return Boolean(readback && readback !== before);
 }
 
