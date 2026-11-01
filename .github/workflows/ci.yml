@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: [24, 26]
+        node: ['lts/-1', 'lts/*']
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -34,7 +34,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
-          node-version: 26
+          node-version: 'lts/*'
       - name: Leak scan, tree and history
         run: node scripts/leak-scan.mjs --history --generic-only .
       - name: gitleaks
@@ -52,7 +52,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 26
+          node-version: 'lts/*'
           cache: npm
       - run: npm ci
       - run: npm run verify
