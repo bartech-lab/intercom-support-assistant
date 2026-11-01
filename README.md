@@ -14,7 +14,7 @@ and id in it is invented.
 
 ## How it is tested
 
-About 2,280 automated tests in 161 files run in about 15 seconds with
+More than 2,000 automated tests in 160+ files run in about 15 seconds with
 `node --test` and jsdom. They are unit and integration tests; there is no
 end-to-end suite against a live Intercom workspace, because the extension does
 not own one.
