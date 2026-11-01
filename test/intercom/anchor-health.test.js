@@ -219,7 +219,7 @@ test('a thread the customer never wrote in reports customerMessages as absent, n
   assert.equal(report.summary.missing, 0, JSON.stringify(
     report.anchors.filter(a => a.status === 'missing').map(a => a.id)
   ));
-  assert.equal(report.summary.absent, 1);
+  assert.deepEqual(Array.from(report.anchors.filter(a => a.status === 'absent').map(a => a.id)), ['customerMessages', 'escalationStatus']);
 });
 
 test('customerMessages stays missing when the agent-reply anchor is gone too', () => {
@@ -340,4 +340,54 @@ test('rows with no label text at all keep attributeLabel missing', () => {
   const { report } = runCheck(loadSidebarRow('<span class="truncate"></span>'));
 
   assert.equal(anchorById(report, 'attributeLabel').status, 'missing');
+});
+
+const STATUS_CONVERSATION_ID = '900476928560574';
+
+function loadStatusConversation(conversationAttrs) {
+  return loadExtension(
+    fx.inboxHtml({
+      composer: fx.composer({ mode: 'email' }),
+      conversation: fx.conversationSpace({ customerText: 'Hello' }),
+      sidebar: fx.sidebarSection({ conversationAttrs })
+    }),
+    { url: CONVERSATION_URL, chromeStub: makeChromeStub() }
+  );
+}
+
+function deliverStatus(win, conversationId = STATUS_CONVERSATION_ID) {
+  const post = data => win.dispatchEvent(new win.MessageEvent('message', { data, source: win, origin: 'https://app.intercom.com' }));
+  post({ __isaic: true, version: 1, kind: 'escalation-status-visibility', teamIds: ['900201'], observedAt: 1 });
+  post({ __isaic: true, version: 1, kind: 'conversation-team', conversationId, teamId: '900201', source: 'summary' });
+  post({ __isaic: true, version: 1, kind: 'conversation-escalation-status', conversationId, inProgress: true, source: 'stream' });
+}
+
+test('a rendered Escalation Status row reports escalationStatus ok, whatever the network says', () => {
+  const win = loadStatusConversation([fx.conversationAttrRow('3001', 'Escalation Status', 'DONE')]);
+  deliverStatus(win);
+  assert.equal(anchorById(runCheck(win).report, 'escalationStatus').status, 'ok');
+});
+
+test('a missing Escalation Status row answered by the network reports degraded', () => {
+  const win = loadStatusConversation([]);
+  deliverStatus(win);
+  const anchor = anchorById(runCheck(win).report, 'escalationStatus');
+  assert.equal(anchor.status, 'degraded');
+  assert.equal(anchor.expected, true);
+});
+
+test('a missing Escalation Status row with no network value reports absent, never missing', () => {
+  const win = loadStatusConversation([]);
+  assert.equal(anchorById(runCheck(win).report, 'escalationStatus').status, 'absent');
+});
+
+test('a network value for another conversation does not make the open one degraded', () => {
+  const win = loadStatusConversation([]);
+  deliverStatus(win, '900903972229001');
+  assert.equal(anchorById(runCheck(win).report, 'escalationStatus').status, 'absent');
+});
+
+test('escalationStatus is skipped outside a conversation', () => {
+  const { win } = loadDraft();
+  assert.equal(anchorById(runCheck(win).report, 'escalationStatus').status, 'skipped');
 });

@@ -117,6 +117,16 @@ const ANCHOR_BACKUPS = {
   rowLabel: () => getAttributeRows().some(row => getRowLabel(row))
 };
 
+const ANCHOR_PROBES = {
+  escalationStatus: () => {
+    if (findAttributeRowByLabel(FIELD_LABELS.escalationStatus)) return 'ok';
+    const network = typeof resolveNetworkEscalationInProgress === 'function'
+      ? resolveNetworkEscalationInProgress(getConversationId())
+      : null;
+    return network === null ? 'absent' : 'degraded';
+  }
+};
+
 function anchorAppliesToView(anchor, view) {
   if (view === 'other') return false;
   if (anchor.views === 'any') return true;
@@ -143,7 +153,8 @@ function buildAnchorHealthReport() {
     const expected = anchorAppliesToView(anchor, view) && !anchor.transient;
     const resolved = selectors.some(entry => entry.valid && entry.count > 0);
     let status = 'skipped';
-    if (expected) status = resolved ? 'ok' : 'missing';
+    if (anchor.probe) status = expected ? ANCHOR_PROBES[anchor.probe]() : 'skipped';
+    else if (expected) status = resolved ? 'ok' : 'missing';
     else if (resolved) status = 'ok';
 
     if (status === 'missing' && anchor.backup && ANCHOR_BACKUPS[anchor.backup]()) status = 'degraded';

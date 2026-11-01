@@ -80,11 +80,13 @@ Tests:
 
 Blocking Close while work is still in progress elsewhere. See [architecture](architecture.md#close-safeguards).
 
-Source: `src/intercom-guards.js`.
+Source: `src/intercom-guards.js`, with the stream fallback in `src/intercom-page-hook.js` and `src/intercom-bridge.js`.
 
 Tests:
 
 - `test/intercom/close-guard-edges.test.js`
+- `test/intercom/network-escalation-status.test.js`
+- `test/intercom/page-hook-escalation-status.test.js`
 
 ## New-message alerts
 

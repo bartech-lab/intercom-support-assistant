@@ -19,9 +19,12 @@
   var COUNTS_KIND = 'inbox-counts';
   var NEXUS_KIND = 'nexus-frame';
   var TEAM_DIRECTORY_KIND = 'team-directory';
+  var ESCALATION_STATUS_KIND = 'conversation-escalation-status';
+  var ESCALATION_STATUS_VISIBILITY_KIND = 'escalation-status-visibility';
 
   var INBOXES_PATH = /^\/ember\/inbox\/inboxes\/inboxes$/;
   var ASSIGNEES_PATH = /^\/ember\/inbox\/assignees$/;
+  var DESCRIPTORS_PATH = /^\/ember\/conversation_attributes\/descriptors$/;
   var MAX_TEAM_DIRECTORY_ENTRIES = 2000;
   var MAX_TEAM_NAME_CHARS = 120;
   var WS_URL_PATTERN = /nexus|websocket/i;
@@ -68,6 +71,8 @@
   var LANGUAGE_ATTRIBUTE_ID = 'language';
   var LANGUAGE_ATTRIBUTE_NAME = 'language';
   var COMPANY_ATTRIBUTE_NAME = 'brand';
+  var ESCALATION_STATUS_ATTRIBUTE_NAME = 'escalation status';
+  var IN_PROGRESS_TEXT = 'in progress';
   var OPTION_ID_TOKEN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   var ATTRIBUTE_RENDERABLE_TYPE = 14;
   var CUSTOMER_EMAIL_RENDERABLE_TYPE = 12;
@@ -592,6 +597,17 @@
     send(envelope);
   }
 
+  function postEscalationStatus(conversationId, inProgress, source) {
+    var envelope = {};
+    envelope[MARKER] = true;
+    envelope.version = ENVELOPE_VERSION;
+    envelope.kind = ESCALATION_STATUS_KIND;
+    envelope.conversationId = conversationId;
+    envelope.inProgress = inProgress;
+    envelope.source = source;
+    send(envelope);
+  }
+
   function postTeam(conversationId, teamId, source) {
     var envelope = {};
     envelope[MARKER] = true;
@@ -789,6 +805,32 @@
     return parseStreamAttribute(payload, conversationId, isCompanyDescriptor, COMPANY_VALUE_TOKEN);
   }
 
+  function isEscalationStatusDescriptor(descriptor) {
+    if (!descriptor || typeof descriptor !== 'object') return false;
+    return String(descriptor.name || '').trim().toLowerCase() === ESCALATION_STATUS_ATTRIBUTE_NAME;
+  }
+
+  function parseStreamEscalationStatus(payload, conversationId) {
+    if (!payload || typeof payload !== 'object') return null;
+    if (String(payload.id) !== conversationId) return null;
+    if (!Array.isArray(payload.renderable_parts)) return null;
+
+    var best = null;
+    for (var i = 0; i < payload.renderable_parts.length; i += 1) {
+      var part = payload.renderable_parts[i];
+      if (!part || part.renderable_type !== ATTRIBUTE_RENDERABLE_TYPE) continue;
+      var data = part.renderable_data;
+      if (!data || !isEscalationStatusDescriptor(data.attribute_summary)) continue;
+      var order = streamPartOrder(part);
+      if (order === null) return null;
+      if (!best || order > best.order) best = { order: order, value: data.value };
+    }
+    if (!best) return null;
+    if (best.value === null || best.value === undefined) return { inProgress: false };
+    if (typeof best.value !== 'string' || best.value.length > MAX_LANGUAGE_CHARS) return null;
+    return { inProgress: best.value.trim().toLowerCase().indexOf(IN_PROGRESS_TEXT) !== -1 };
+  }
+
   function acceptableAddress(value) {
     if (typeof value !== 'string') return null;
     var trimmed = value.trim().toLowerCase();
@@ -973,6 +1015,42 @@
     });
   }
 
+  function parseAttributeVisibility(payload, matchesDescriptor) {
+    if (!Array.isArray(payload)) return null;
+    var live = payload.filter(function (descriptor) {
+      return matchesDescriptor(descriptor) && descriptor.archived !== true;
+    });
+    if (live.length !== 1) return null;
+    var teams = live[0].visible_to_team_ids;
+    if (teams === null || teams === undefined) return { teamIds: null };
+    if (!Array.isArray(teams) || teams.length > MAX_TEAM_DIRECTORY_ENTRIES) return null;
+    var teamIds = [];
+    for (var i = 0; i < teams.length; i += 1) {
+      var id = String(teams[i] === undefined || teams[i] === null ? '' : teams[i]);
+      if (!TEAM_ID_TOKEN.test(id)) return null;
+      if (teamIds.indexOf(id) === -1) teamIds.push(id);
+    }
+    return { teamIds: teamIds };
+  }
+
+  function postEscalationStatusVisibility(visibility) {
+    var envelope = {};
+    envelope[MARKER] = true;
+    envelope.version = ENVELOPE_VERSION;
+    envelope.kind = ESCALATION_STATUS_VISIBILITY_KIND;
+    envelope.teamIds = visibility.teamIds;
+    envelope.observedAt = Date.now();
+    send(envelope);
+  }
+
+  function observeDescriptorsResponse(response, requestUrl) {
+    readJsonResponse(response, requestUrl, function (payload, finalUrl) {
+      if (!DESCRIPTORS_PATH.test(finalUrl.pathname)) return;
+      var statusVisibility = parseAttributeVisibility(payload, isEscalationStatusDescriptor);
+      if (statusVisibility) postEscalationStatusVisibility(statusVisibility);
+    });
+  }
+
   function postNexusFrame(url, text) {
     var envelope = {};
     envelope[MARKER] = true;
@@ -1070,6 +1148,8 @@
       }
 
       if (match.source !== 'stream') return;
+      var escalationStatus = parseStreamEscalationStatus(payload, match.id);
+      if (escalationStatus) postEscalationStatus(match.id, escalationStatus.inProgress, match.source);
       var addresses = parseInboundAddresses(payload, match.id);
       if (addresses) postAddresses(match.id, addresses, match.source);
     });
@@ -1175,6 +1255,12 @@
           result.then(function (response) {
             try {
               observeAssigneesResponse(response, requestUrl);
+            } catch (error) {}
+          }).catch(function () {});
+        } else if (method === 'GET' && DESCRIPTORS_PATH.test(requestUrl.pathname)) {
+          result.then(function (response) {
+            try {
+              observeDescriptorsResponse(response, requestUrl);
             } catch (error) {}
           }).catch(function () {});
         } else {

@@ -132,6 +132,14 @@ blocks it with an explanation when:
 Snooze stays available. The rules are constants in `src/intercom-util.js`
 (`IN_PROGRESS_BLOCK_MESSAGE`, `TRACKER_LINK_PATTERN`).
 
+When the sidebar shows no `Escalation Status` row, the guard uses the newest
+value of that attribute from the conversation stream, which the page hook
+relays as one boolean. It does so only when the attribute descriptor lets the
+conversation's team see the field, or lets every team see it, so nobody is
+blocked by a field they cannot see. A rendered row always wins, because a stream
+fetched before an edit can be stale. Anchor health reports the row as
+`degraded` when only the stream answered.
+
 ## New-message alerts
 
 Inboxes whose name matches `alertInboxPattern` are discovered from the left

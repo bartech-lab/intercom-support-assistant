@@ -344,6 +344,11 @@ const CRITICAL_ANCHORS = [
     selectors: ['modernCloseButton', 'modernReopenButton', 'closeConversationIcon', 'reopenConversationIcon']
   },
   {
+    id: 'escalationStatus', label: 'Escalation Status row', feature: 'Close guard', views: 'conversation',
+    probe: 'escalationStatus',
+    selectors: []
+  },
+  {
     id: 'draftChannel', label: 'Draft channel picker', feature: 'New conversation composer mode', views: 'new-conversation',
     selectors: ['draftChannelPicker']
   },

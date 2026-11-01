@@ -27,6 +27,12 @@ function isInProgressStatus() {
     return valueText.toLowerCase().includes('in progress');
   }
 
+  const conversationId = typeof getConversationId === 'function' ? getConversationId() : null;
+  const networkInProgress = typeof resolveNetworkEscalationInProgress === 'function'
+    ? resolveNetworkEscalationInProgress(conversationId)
+    : null;
+  if (networkInProgress !== null) return networkInProgress;
+
   const section = getSidebarSection();
   if (!section) return false;
 

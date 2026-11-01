@@ -7,6 +7,7 @@ const INTERCOM_BRIDGE_IDENTITY_KIND = 'conversation-identity';
 const INTERCOM_BRIDGE_ADDRESS_KIND = 'conversation-inbound-address';
 const INTERCOM_BRIDGE_LIST_STATE_KIND = 'inbox-list-state';
 const INTERCOM_BRIDGE_TEAM_KIND = 'conversation-team';
+const INTERCOM_BRIDGE_ESCALATION_STATUS_KIND = 'conversation-escalation-status';
 const INTERCOM_BRIDGE_CONVERSATION_STATE_KIND = 'conversation-state';
 const INTERCOM_BRIDGE_CONTACT_KIND = 'contact-language';
 const INTERCOM_BRIDGE_LIST_IDENTITY_KIND = 'inbox-list-identity';
@@ -31,6 +32,7 @@ const INTERCOM_BRIDGE_MAX_ADDRESSES = 5;
 const NETWORK_LANGUAGE_MAX_CONVERSATIONS = 20;
 const NETWORK_COMPANY_MAX_CONVERSATIONS = 20;
 const NETWORK_IDENTITY_MAX_CONVERSATIONS = 20;
+const NETWORK_ESCALATION_STATUS_MAX_CONVERSATIONS = 20;
 const INTERCOM_BRIDGE_MAX_COMPANY_CHARS = 64;
 const INBOUND_ADDRESS_MAX_CONVERSATIONS = 200;
 const INTERCOM_BRIDGE_INBOX_TYPE_TOKEN = /^[a-z_]{1,32}$/;
@@ -47,6 +49,7 @@ const networkLanguageByConversation = new Map();
 const networkCompanyByConversation = new Map();
 const networkIdentityByConversation = new Map();
 const networkTeamByConversation = new Map();
+const networkEscalationStatusByConversation = new Map();
 const inboundAddressByConversation = new Map();
 const listIdentityByInbox = new Map();
 let listIdentityVersion = 0;
@@ -55,6 +58,7 @@ const listStateUnknownSince = new Map();
 let listStateRowsAwaitingRerender = null;
 const networkInboxCountByKey = new Map();
 let networkTeamDirectory = null;
+let networkEscalationStatusVisibility = null;
 
 function isValidBridgeShell(data) {
   if (!data || typeof data !== 'object') return false;
@@ -96,6 +100,7 @@ function rememberNetworkTeam(conversationId, teamId) {
     networkTeamByConversation.delete(networkTeamByConversation.keys().next().value);
   }
 
+  if (typeof refreshInProgressActionHighlights === 'function') refreshInProgressActionHighlights();
 }
 
 function resolveNetworkTeamCompany(conversationId) {
@@ -246,6 +251,40 @@ function rememberNetworkIdentity(conversationId, email) {
 
 function resolveNetworkIdentity(conversationId) {
   return networkIdentityByConversation.get(conversationId) || null;
+}
+
+function isValidEscalationStatusEnvelope(data) {
+  return data.source === 'stream' && typeof data.inProgress === 'boolean';
+}
+
+function rememberNetworkEscalationStatus(conversationId, inProgress) {
+  if (networkEscalationStatusByConversation.get(conversationId) === inProgress) return;
+  networkEscalationStatusByConversation.delete(conversationId);
+  networkEscalationStatusByConversation.set(conversationId, inProgress);
+  while (networkEscalationStatusByConversation.size > NETWORK_ESCALATION_STATUS_MAX_CONVERSATIONS) {
+    networkEscalationStatusByConversation.delete(networkEscalationStatusByConversation.keys().next().value);
+  }
+
+  if (typeof refreshInProgressActionHighlights === 'function') refreshInProgressActionHighlights();
+}
+
+function rememberEscalationStatusVisibility(teamIds) {
+  networkEscalationStatusVisibility = { teamIds: teamIds === null ? null : new Set(teamIds) };
+  if (typeof refreshInProgressActionHighlights === 'function') refreshInProgressActionHighlights();
+}
+
+function escalationStatusVisibleForConversation(conversationId) {
+  if (!networkEscalationStatusVisibility) return false;
+  if (!networkEscalationStatusVisibility.teamIds) return true;
+  const teamId = networkTeamByConversation.get(conversationId);
+  return Boolean(teamId) && networkEscalationStatusVisibility.teamIds.has(teamId);
+}
+
+function resolveNetworkEscalationInProgress(conversationId) {
+  if (!conversationId) return null;
+  if (!escalationStatusVisibleForConversation(conversationId)) return null;
+  const inProgress = networkEscalationStatusByConversation.get(conversationId);
+  return typeof inProgress === 'boolean' ? inProgress : null;
 }
 
 function rememberNetworkLanguage(conversationId, source, rawLanguage) {
@@ -409,6 +448,14 @@ function teamDirectorySnapshot() {
     : null;
 }
 
+function isValidVisibilityEnvelope(data) {
+  if (data.observedAt !== undefined
+    && (!Number.isFinite(data.observedAt) || data.observedAt < 0 || data.observedAt > Date.now())) return false;
+  if (data.teamIds === null) return true;
+  return Array.isArray(data.teamIds) && data.teamIds.length <= 2000
+    && data.teamIds.every(id => typeof id === 'string' && INTERCOM_BRIDGE_TEAM_ID_TOKEN.test(id));
+}
+
 function rememberNetworkInboxCounts(entries, observedAt = Date.now()) {
   entries.forEach((entry) => {
     const key = `${entry.inboxType}:${entry.inboxId}`;
@@ -566,6 +613,11 @@ function handleIntercomBridgeMessage(event) {
     return;
   }
 
+  if (data.kind === 'escalation-status-visibility' && isValidVisibilityEnvelope(data)) {
+    rememberEscalationStatusVisibility(data.teamIds);
+    return;
+  }
+
   if (data.kind === 'inbox-counts' && isValidInboxCountsEnvelope(data)) {
     rememberNetworkInboxCounts(data.counts, data.observedAt);
     return;
@@ -592,6 +644,10 @@ function handleIntercomBridgeMessage(event) {
   }
   if (data.kind === INTERCOM_BRIDGE_IDENTITY_KIND && isValidIdentityEnvelope(data)) {
     rememberNetworkIdentity(data.conversationId, data.email);
+    return;
+  }
+  if (data.kind === INTERCOM_BRIDGE_ESCALATION_STATUS_KIND && isValidEscalationStatusEnvelope(data)) {
+    rememberNetworkEscalationStatus(data.conversationId, data.inProgress);
     return;
   }
   if (data.kind === INTERCOM_BRIDGE_TEAM_KIND && isValidTeamEnvelope(data)) {
