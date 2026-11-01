@@ -262,16 +262,6 @@ test('the language style element stays single across conversation switches', () 
   assert.equal(win.document.querySelectorAll('#isa-draft-language-style').length, 1);
 });
 
-function stubDiagnostics(win, overrides = {}) {
-  const calls = [];
-  win.ISA_DIAGNOSTICS = {
-    operation() { calls.push(['operation']); return 'op-7'; },
-    record(...args) { calls.push(['record', ...args]); },
-    ...overrides
-  };
-  return calls;
-}
-
 test('a settled language picker is neither rebuilt nor repainted by further passes', () => {
   const win = loadConversation({ bar: BAR });
   win.refreshComposerLanguagePicker();
