@@ -2,7 +2,7 @@
 
 ```bash
 npm ci
-npm test          # 2,000+ tests, about 15 s on one laptop
+npm test          # 2,200+ tests, about 15 s on one laptop
 npm run verify    # the full release gate, see RELEASE.md
 ```
 
