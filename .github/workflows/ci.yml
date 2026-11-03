@@ -24,7 +24,7 @@ jobs:
       - run: npm ci
       - run: npm test
       - name: Syntax check
-        run: find src tools test scripts -name '*.js' -o -name '*.mjs' | xargs -L 1 node --check
+        run: find src tools test scripts \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -n 1 node --check
 
   leak-scan:
     runs-on: ubuntu-latest
