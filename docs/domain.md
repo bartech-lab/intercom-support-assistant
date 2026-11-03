@@ -71,6 +71,7 @@ Tests:
 - `test/intercom/page-hook-buffer-handshake.test.js`
 - `test/intercom/page-hook-buffer-source-edges.test.js`
 - `test/intercom/page-hook-guards.test.js`
+- `test/intercom/page-hook-path-anchors.test.js`
 - `test/intercom/page-hook-stream-attribute-order.test.js`
 - `test/intercom/page-hook-survivor-pins.test.js`
 - `test/intercom/team-directory.test.js`
