@@ -95,11 +95,14 @@ function confirmZipFiles() {
 }
 
 function main() {
-  let status = runStage(1, 'npm test', npmCommand, ['test']);
-  if (status !== 0) return status;
+  let status;
+  if (!process.argv.includes('--skip-tests')) {
+    status = runStage(1, 'npm test', npmCommand, ['test']);
+    if (status !== 0) return status;
 
-  status = runSyntaxChecks();
-  if (status !== 0) return status;
+    status = runSyntaxChecks();
+    if (status !== 0) return status;
+  }
 
   status = runStage(3, 'git diff --check', 'git', ['diff', '--check']);
   if (status !== 0) return status;
