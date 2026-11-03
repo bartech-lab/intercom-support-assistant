@@ -170,3 +170,11 @@ test('E7: a null entry in the cc list is skipped and the valid address is relaye
   assert.equal(envelopes.length, 1);
   assert.deepEqual(addressesOf(envelopes[0]), ['support@brightwell.example']);
 });
+
+test('E8: the same address in to and cc is relayed once', async () => {
+  const envelopes = await relayAddresses(streamBody(
+    [customerEmailPart({ id: 1, to: 'support@brightwell.example', cc: ['support@brightwell.example', 'help@brightwell.example'] })]
+  ));
+  assert.equal(envelopes.length, 1);
+  assert.deepEqual(addressesOf(envelopes[0]), ['support@brightwell.example', 'help@brightwell.example']);
+});
