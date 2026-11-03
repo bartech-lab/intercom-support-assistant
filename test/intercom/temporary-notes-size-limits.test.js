@@ -79,3 +79,15 @@ test('a 2,000,000-character request JSON around a short armed draft is never for
   assert.equal(result.requests.filter(init => /ISA-AUTO-DELETE/.test(init.body)).length, 0);
   assert.notEqual(result.save && result.save.status, 'success');
 });
+
+test('a request JSON of exactly 1,204,096 characters is forwarded with the footer and one more character is not', async () => {
+  const max = LIMIT * 6 + 4096;
+  const base = JSON.stringify({ model_id: CONTACT, is_company: false, body: 'short draft', junk: '' }).length;
+  const atLimit = await run({ draft: 'short draft', requestExtra: { junk: 'j'.repeat(max - base) } });
+  assert.equal(atLimit.requests.length, 1);
+  assert.match(JSON.parse(atLimit.requests[0].body).body, /ISA-AUTO-DELETE/);
+  assert.equal(atLimit.save.status, 'success');
+  const over = await run({ draft: 'short draft', requestExtra: { junk: 'j'.repeat(max - base + 1) }, tolerateReject: true });
+  assert.equal(over.requests.filter(init => /ISA-AUTO-DELETE/.test(init.body)).length, 0);
+  assert.notEqual(over.save && over.save.status, 'success');
+});
