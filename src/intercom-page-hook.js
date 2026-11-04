@@ -1202,6 +1202,7 @@
         temporaryNoteSaveError(arm, 'blocked', 'footer-unavailable');
         return Promise.reject(new Error('Temporary note expiry footer is unavailable'));
       }
+      arm.pending = true;
       return temporaryNoteBody(input, init).then(function (bodyInfo) {
         if (!bodyInfo.supported) {
           temporaryNoteSaveError(arm, 'blocked', 'request-body-unreadable');

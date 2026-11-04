@@ -127,6 +127,34 @@ test("a second POST while the first save is in flight is blocked as save-pending
   assert.equal(requests.length, 1);
 });
 
+test("two POSTs in the same tick reach fetch once and the second is blocked as save-pending", async () => {
+  const { requests, impl } = recorder(ok);
+  const hook = makeHook(impl);
+  arm(hook);
+  const first = postNote(hook);
+  const second = postNote(hook).then(() => null, caught => caught);
+  await first;
+  assert.ok(await second, "the second save rejects");
+  await delay(0);
+  assert.equal(requests.length, 1);
+  const statuses = savesOf(hook).map(message => message.status + ":" + (message.reason || ""));
+  assert.deepEqual(statuses.sort(), ["blocked:save-pending", "success:"]);
+});
+
+test("a body that cannot be read releases the same-tick guard so a fresh arm can save", async () => {
+  const { requests, impl } = recorder(ok);
+  const hook = makeHook(impl);
+  arm(hook);
+  const unreadable = await hook.window.fetch(CREATE_URL, { method: "POST", body: {} }).then(() => null, caught => caught);
+  assert.ok(unreadable);
+  assert.equal(savesOf(hook).pop().reason, "request-body-unreadable");
+  arm(hook, { token: "guard-token-2", revision: 2 });
+  await postNote(hook);
+  await delay(0);
+  assert.equal(requests.length, 1);
+  assert.equal(savesOf(hook).pop().status, "success");
+});
+
 test("after a 4xx failure a POST without a new arm is blocked as rearm-required, and a fresh arm unblocks it", async () => {
   const { requests, impl } = recorder(async (sent, call) => (call === 1
     ? makeIntercomResponse("{}", { url: CREATE_URL, status: 422 })
