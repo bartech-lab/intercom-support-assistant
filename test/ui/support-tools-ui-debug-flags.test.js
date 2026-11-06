@@ -242,7 +242,7 @@ test('a document that is already complete mounts the cards without any event', a
 test('a document that is still loading mounts the cards after DOMContentLoaded', async () => {
   const ctl = controlledStorage({});
   const dom = makeDom();
-  assert.equal(dom.window.document.readyState, 'loading');
+  Object.defineProperty(dom.window.document, 'readyState', { value: 'loading', configurable: true });
   const chrome = makeChrome(ctl.storage);
   ctl.state.chrome = chrome;
 

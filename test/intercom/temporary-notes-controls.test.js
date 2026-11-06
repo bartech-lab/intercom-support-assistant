@@ -70,7 +70,9 @@ test('turning auto-delete on shows one deadline line and no cleanup notice', () 
   const panel = controlsOf(win);
   enable(win, panel);
   assert.equal(panel.choice.hidden, false, 'the lifetime picker appears with auto-delete');
-  assert.equal(win.getComputedStyle(panel.choice).display, 'inline-flex');
+  assert.equal(panel.choice.style.display, 'inline-flex');
+  assert.equal(win.getComputedStyle(panel.choice).display, 'flex',
+    'a flex item computes to the block form of its display');
   assert.match(panel.preview.textContent,
     /^Expires \d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC$/);
   assert.equal(panel.status.hidden, true, 'an always-on cleanup has no news to report');
