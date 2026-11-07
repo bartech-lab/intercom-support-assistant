@@ -134,7 +134,7 @@ npm run verify    # the full release gate; also builds the ZIP
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE). Made by [bartech-lab](https://github.com/bartech-lab).
 
 Not affiliated with or endorsed by Intercom. "Intercom" is a trademark of its
 owner and is used here only to name the product this extension works with.
