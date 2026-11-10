@@ -63,7 +63,7 @@ function plan(facts) {
     '',
     'After a yes, run:',
     `git tag -a "${facts.tag}" -m "${title}" HEAD`,
-    `git push --no-verify origin "refs/tags/${facts.tag}"`,
+    `git push origin "refs/tags/${facts.tag}"`,
     `node tools/bump-version.js --print-notes="${facts.version}" > scratchpad/release-body.md`,
     `gh release create "${facts.tag}" "${facts.asset}" --title "${title}" --notes-file scratchpad/release-body.md`,
     `gh release view "${facts.tag}" --json tagName,assets --jq '.tagName, .assets[].name'`
