@@ -149,7 +149,7 @@ function printOverview(file, meta, document, roots) {
     console.log(`  extension:      ${meta.extensionVersion || 'unknown'}`);
     console.log(`  capturedAt:     ${meta.capturedAt}`);
     const teamCount = meta.teamDirectory && Array.isArray(meta.teamDirectory.teams) ? meta.teamDirectory.teams.length : 0;
-    if (meta.surface === 'intercom') console.log(`  teams:          ${teamCount ? `${teamCount}, list them with --teams` : 'none (reload the tab before capturing)'}`);
+    if (meta.surface === 'intercom') console.log(`  teams:          ${teamCount ? `${teamCount}, list them with --teams` : teamListMissingReason(meta.teamDirectory)}`);
   } else {
     console.log('  no metadata header found');
   }
@@ -204,6 +204,11 @@ function printSelector(roots, selector, limit, index) {
   });
 }
 
+function teamListMissingReason(directory) {
+  if (directory && directory.error) return `No team list in this capture: the Intercom team list request failed (${directory.error}).`;
+  return 'No team list in this capture. It predates the capture-time team list request: capture again with the current build.';
+}
+
 function main() {
   const args = parseArgs(process.argv.slice(2));
   if (!args.file) {
@@ -226,7 +231,7 @@ function main() {
   if (args.teams) {
     const directory = meta && meta.teamDirectory;
     if (!directory || !Array.isArray(directory.teams) || !directory.teams.length) {
-      console.log('No team list in this capture. Reload the Intercom tab, then capture again: Intercom sends the list only when the page loads.');
+      console.log(teamListMissingReason(directory));
       process.exit(1);
     }
     console.log(`# ${directory.teams.length} teams, loaded ${directory.observedAt}`);

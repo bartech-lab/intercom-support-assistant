@@ -18,15 +18,12 @@
   var LIST_IDENTITY_KIND = 'inbox-list-identity';
   var COUNTS_KIND = 'inbox-counts';
   var NEXUS_KIND = 'nexus-frame';
-  var TEAM_DIRECTORY_KIND = 'team-directory';
   var ESCALATION_STATUS_KIND = 'conversation-escalation-status';
   var ESCALATION_STATUS_VISIBILITY_KIND = 'escalation-status-visibility';
 
   var INBOXES_PATH = /^\/ember\/inbox\/inboxes\/inboxes$/;
-  var ASSIGNEES_PATH = /^\/ember\/inbox\/assignees$/;
   var DESCRIPTORS_PATH = /^\/ember\/conversation_attributes\/descriptors$/;
   var MAX_TEAM_DIRECTORY_ENTRIES = 2000;
-  var MAX_TEAM_NAME_CHARS = 120;
   var WS_URL_PATTERN = /nexus|websocket/i;
   var WS_FRAME_PATTERN = /inbox|conversation|notification|count/i;
   var MAX_INBOX_COUNT_ENTRIES = 50;
@@ -83,7 +80,7 @@
   var temporaryNoteArm = null;
 
   function envelopeSlot(envelope) {
-    if (envelope.kind === COUNTS_KIND || envelope.kind === NEXUS_KIND || envelope.kind === TEAM_DIRECTORY_KIND) return envelope.kind;
+    if (envelope.kind === COUNTS_KIND || envelope.kind === NEXUS_KIND) return envelope.kind;
     if (envelope.kind === LIST_STATE_KIND) return envelope.kind + '::' + envelope.inboxKey;
     if (envelope.kind === CONTACT_KIND) return envelope.kind + '::' + envelope.userId;
     if (envelope.kind === LIST_IDENTITY_KIND) return envelope.kind + '::' + envelope.inboxKey;
@@ -981,40 +978,6 @@
     });
   }
 
-  function parseTeamDirectory(payload) {
-    var results = payload && payload.teams && Array.isArray(payload.teams.results) ? payload.teams.results : null;
-    if (!results) return null;
-    var teams = [];
-    for (var i = 0; i < results.length && teams.length < MAX_TEAM_DIRECTORY_ENTRIES; i += 1) {
-      var team = results[i];
-      if (!team || typeof team !== 'object' || team.is_redacted === true) continue;
-      var id = String(team.id === undefined || team.id === null ? '' : team.id);
-      var name = typeof team.name === 'string' ? team.name.trim() : '';
-      if (!TEAM_ID_TOKEN.test(id)) continue;
-      if (!name || name.length > MAX_TEAM_NAME_CHARS || /[\u0000-\u001f]/.test(name)) continue;
-      teams.push({ id: id, name: name });
-    }
-    return teams.length ? teams : null;
-  }
-
-  function postTeamDirectory(teams) {
-    var envelope = {};
-    envelope[MARKER] = true;
-    envelope.version = ENVELOPE_VERSION;
-    envelope.kind = TEAM_DIRECTORY_KIND;
-    envelope.teams = teams;
-    envelope.observedAt = Date.now();
-    send(envelope);
-  }
-
-  function observeAssigneesResponse(response, requestUrl) {
-    readJsonResponse(response, requestUrl, function (payload, finalUrl) {
-      if (!ASSIGNEES_PATH.test(finalUrl.pathname)) return;
-      var teams = parseTeamDirectory(payload);
-      if (teams) postTeamDirectory(teams);
-    });
-  }
-
   function parseAttributeVisibility(payload, matchesDescriptor) {
     if (!Array.isArray(payload)) return null;
     var live = payload.filter(function (descriptor) {
@@ -1250,12 +1213,6 @@
           result.then(function (response) {
             try {
               observeInboxesResponse(response, requestUrl);
-            } catch (error) {}
-          }).catch(function () {});
-        } else if (method === 'GET' && ASSIGNEES_PATH.test(requestUrl.pathname)) {
-          result.then(function (response) {
-            try {
-              observeAssigneesResponse(response, requestUrl);
             } catch (error) {}
           }).catch(function () {});
         } else if (method === 'GET' && DESCRIPTORS_PATH.test(requestUrl.pathname)) {

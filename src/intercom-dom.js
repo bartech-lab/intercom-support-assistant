@@ -205,7 +205,46 @@ function buildAnchorHealthReport() {
   };
 }
 
-function buildDomCapture() {
+function parseTeamDirectory(payload) {
+  const teams = [];
+  for (const team of Array.isArray(payload?.teams) ? payload.teams : []) {
+    if (teams.length >= TEAM_DIRECTORY_MAX_ENTRIES) break;
+    if (!team || typeof team !== 'object' || team.is_redacted === true) continue;
+    const id = String(team.id ?? '');
+    const name = typeof team.name === 'string' ? team.name.trim() : '';
+    if (!/^\d{1,20}$/.test(id) || !name || name.length > TEAM_DIRECTORY_MAX_NAME_CHARS || /[\u0000-\u001f]/.test(name)) continue;
+    teams.push({ id, name });
+  }
+  return teams;
+}
+
+async function fetchTeamDirectory() {
+  const match = String(window.location.pathname).match(/^\/a\/(?:inbox\/([A-Za-z0-9_-]{1,64})\/inbox|apps\/([A-Za-z0-9_-]{1,64}))(?:\/|$)/);
+  const workspace = match && (match[1] || match[2]);
+  if (!workspace) return { error: 'no-workspace' };
+  const url = new URL(TEAM_DIRECTORY_PATH, window.location.origin);
+  url.searchParams.set('app_id', workspace);
+  const headers = { Accept: 'application/json' };
+  const csrf = document.querySelector('meta[name="csrf-token"]');
+  if (csrf && csrf.content) headers['X-CSRF-Token'] = csrf.content;
+  try {
+    const response = await fetch(url.toString(), {
+      credentials: 'same-origin',
+      cache: 'no-store',
+      headers,
+      signal: AbortSignal.timeout(TEAM_DIRECTORY_TIMEOUT_MS)
+    });
+    if (!response.ok) return { error: `http-${response.status}` };
+    const text = await response.text();
+    if (text.length > TEAM_DIRECTORY_MAX_CHARS) return { error: 'too-large' };
+    const teams = parseTeamDirectory(JSON.parse(text));
+    return teams.length ? { observedAt: new Date().toISOString(), teams } : { error: 'no-teams' };
+  } catch (error) {
+    return { error: error && error.name === 'TimeoutError' ? 'timeout' : 'request-failed' };
+  }
+}
+
+function buildDomCapture(teamDirectory) {
   if (!window.ISA_DOM_CAPTURE) return { ok: false, error: 'capture-unavailable', url: window.location.href };
   return window.ISA_DOM_CAPTURE.buildCapture({
     surface: 'intercom',
@@ -213,7 +252,7 @@ function buildDomCapture() {
     view: detectAnchorView(),
     shadowRootPresent: Boolean(intercomShadowRoot()),
     anchorHealth: buildAnchorHealthReport(),
-    teamDirectory: typeof teamDirectorySnapshot === 'function' ? teamDirectorySnapshot() : null
+    teamDirectory
   });
 }
 
@@ -221,6 +260,8 @@ function handleDomCaptureMessage(message, sender, sendResponse) {
   if (!message || message.type !== DOM_CAPTURE_MESSAGE) return false;
 
   const fallback = { ok: false, error: 'capture-failed', url: window.location.href };
-  sendResponse(safeExecute(buildDomCapture, 'buildDomCapture', fallback));
-  return false;
+  fetchTeamDirectory().then((teamDirectory) => {
+    sendResponse(safeExecute(() => buildDomCapture(teamDirectory), 'buildDomCapture', fallback));
+  });
+  return true;
 }

@@ -57,7 +57,6 @@ const listStateByInbox = new Map();
 const listStateUnknownSince = new Map();
 let listStateRowsAwaitingRerender = null;
 const networkInboxCountByKey = new Map();
-let networkTeamDirectory = null;
 let networkEscalationStatusVisibility = null;
 
 function isValidBridgeShell(data) {
@@ -425,29 +424,6 @@ function isValidInboxCountsEnvelope(data) {
     entry.count <= NETWORK_INBOX_MAX_COUNT && Math.floor(entry.count) === entry.count);
 }
 
-function isValidTeamDirectoryEnvelope(data) {
-  if (!Array.isArray(data.teams) || !data.teams.length || data.teams.length > 2000) return false;
-  if (data.observedAt !== undefined
-    && (!Number.isFinite(data.observedAt) || data.observedAt < 0 || data.observedAt > Date.now())) return false;
-  return data.teams.every(entry => entry && typeof entry === 'object' &&
-    typeof entry.id === 'string' && /^\d{1,20}$/.test(entry.id) &&
-    typeof entry.name === 'string' && entry.name.length > 0 && entry.name.length <= 120 &&
-    !/[\u0000-\u001f]/.test(entry.name));
-}
-
-function rememberTeamDirectory(teams, observedAt = Date.now()) {
-  networkTeamDirectory = {
-    observedAt: new Date(Number.isFinite(observedAt) ? observedAt : Date.now()).toISOString(),
-    teams: teams.map(entry => ({ id: entry.id, name: entry.name }))
-  };
-}
-
-function teamDirectorySnapshot() {
-  return networkTeamDirectory
-    ? { observedAt: networkTeamDirectory.observedAt, teams: networkTeamDirectory.teams.map(entry => ({ ...entry })) }
-    : null;
-}
-
 function isValidVisibilityEnvelope(data) {
   if (data.observedAt !== undefined
     && (!Number.isFinite(data.observedAt) || data.observedAt < 0 || data.observedAt > Date.now())) return false;
@@ -605,11 +581,6 @@ function handleIntercomBridgeMessage(event) {
       browserLocale: data.browserLocale || null,
       countryCode: data.countryCode || null
     });
-    return;
-  }
-
-  if (data.kind === 'team-directory' && isValidTeamDirectoryEnvelope(data)) {
-    rememberTeamDirectory(data.teams, data.observedAt);
     return;
   }
 

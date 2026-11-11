@@ -282,6 +282,11 @@ const SELECTORS = {
 
 const ANCHOR_HEALTH_VERSION = 1;
 const DOM_CAPTURE_MESSAGE = 'isa-dom-capture';
+const TEAM_DIRECTORY_PATH = '/ember/inbox/assignees/teams';
+const TEAM_DIRECTORY_TIMEOUT_MS = 8000;
+const TEAM_DIRECTORY_MAX_ENTRIES = 2000;
+const TEAM_DIRECTORY_MAX_NAME_CHARS = 120;
+const TEAM_DIRECTORY_MAX_CHARS = 4 * 1024 * 1024;
 const CANDIDATE_LIMIT = 40;
 const CANDIDATE_ATTRIBUTES = [
   { key: 'testid', attribute: 'data-testid', selector: '[data-testid]' },

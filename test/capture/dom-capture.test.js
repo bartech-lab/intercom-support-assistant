@@ -135,12 +135,13 @@ test('capture metadata header carries the conversation and parses as JSON', () =
   assert.match(capture.filename, /^intercom-\d{8}T\d{6}-900706735484323\.html$/);
 });
 
-test('the content script answers a capture message', () => {
+test('the content script answers a capture message', async () => {
   const chrome = makeChromeStub();
   const win = loadExtension(shadowPageHtml(), { chromeStub: chrome });
   withShadowApp(win, '<div data-intercom-target="conversation-space">hello</div>');
 
   const { responses } = chrome.runtime.onMessage.__emit({ type: 'isa-dom-capture' });
+  await new Promise(resolve => setImmediate(resolve));
   const capture = responses.find(entry => entry && entry.html);
   assert.ok(capture, 'a capture payload was returned');
   assert.equal(capture.ok, true);

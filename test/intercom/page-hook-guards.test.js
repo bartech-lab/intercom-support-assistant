@@ -6,7 +6,6 @@ const { setTimeout: delay } = require('node:timers/promises');
 const { loadIntercomPageHook, makeIntercomResponse } = require('../support/helpers');
 const { ORIGIN, WORKSPACE, CONTACT, CONVERSATION_URL, CREATE_URL } = require('../support/temporary-notes-harness');
 
-const ASSIGNEES_URL = `${ORIGIN}/ember/inbox/assignees?app_id=demo1234`;
 const LIST_QUERY = 'app_id=demo1234&inbox_type=team&inbox_id=900202&state=open';
 const LIST_PATH = '/ember/inbox/conversations/list';
 
@@ -60,55 +59,6 @@ for (const [label, makeBody] of [
     assert.equal(saves[0].reason, 'request-body-unreadable');
   });
 }
-
-function assigneesBody(teams) {
-  return JSON.stringify({
-    admins: { total: 0, results: [] },
-    teams: { total: teams.length, results: teams },
-    version: 3
-  });
-}
-
-async function relayTeams(teams) {
-  const fetchImpl = (input) => {
-    const url = typeof input === 'string' ? input : input.url;
-    return Promise.resolve(makeIntercomResponse(assigneesBody(teams), { url }));
-  };
-  const ctx = loadIntercomPageHook({ fetchImpl });
-  ctx.sendReady();
-  await ctx.window.fetch(ASSIGNEES_URL);
-  await delay(0);
-  await delay(0);
-  return ctx.posted.filter(m => m && m.__isaic === true && m.kind === 'team-directory');
-}
-
-const teamsOf = envelope => JSON.parse(JSON.stringify(envelope.teams));
-
-test('null and non-object team entries are skipped and the valid teams around them still relay', async () => {
-  for (const junk of [5, 'x']) {
-    const envelopes = await relayTeams([
-      { id: 101, name: 'Before', icon: '', is_redacted: false },
-      null,
-      junk,
-      { id: 102, name: 'After', icon: '', is_redacted: false }
-    ]);
-    assert.equal(envelopes.length, 1, String(junk));
-    assert.deepEqual(teamsOf(envelopes[0]), [
-      { id: '101', name: 'Before' },
-      { id: '102', name: 'After' }
-    ]);
-  }
-});
-
-test('a team whose name is not a string is skipped and the valid team after it still relays', async () => {
-  const envelopes = await relayTeams([
-    { id: 201, name: 42, icon: '', is_redacted: false },
-    { id: 202, name: {}, icon: '', is_redacted: false },
-    { id: 203, name: 'Valid', icon: '', is_redacted: false }
-  ]);
-  assert.equal(envelopes.length, 1);
-  assert.deepEqual(teamsOf(envelopes[0]), [{ id: '203', name: 'Valid' }]);
-});
 
 test('conversation list state is relayed for the page origin only', async () => {
   const foreignUrl = `https://cdn.example.net${LIST_PATH}?${LIST_QUERY}`;

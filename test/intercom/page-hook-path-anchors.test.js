@@ -32,19 +32,6 @@ async function kindsRelayed(bodyText, url, init, prepare) {
 
 const ofKind = (messages, kind) => messages.filter(m => m.kind === kind);
 
-const TEAMS = JSON.stringify({
-  admins: { total: 0, results: [] },
-  teams: { total: 1, results: [{ id: 900202, name: 'Support Alpha', icon: '', is_redacted: false }] },
-  version: 3
-});
-
-test('team directory: exact /ember/inbox/assignees is read, a prefixed path is not', async () => {
-  const exact = await kindsRelayed(TEAMS, `${ORIGIN}/ember/inbox/assignees?app_id=${WORKSPACE}`);
-  const prefixed = await kindsRelayed(TEAMS, `${ORIGIN}/x/ember/inbox/assignees?app_id=${WORKSPACE}`);
-  assert.equal(ofKind(exact, 'team-directory').length, 1);
-  assert.equal(ofKind(prefixed, 'team-directory').length, 0);
-});
-
 const DESCRIPTORS = JSON.stringify([
   { id: '900641', name: 'Escalation Status', archived: false, visible_to_team_ids: ['900202'] }
 ]);

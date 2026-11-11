@@ -58,9 +58,12 @@ present and whether each field the extension reads was rendered. A field marked
 `hiddenBehindSeeAll` is set but not in the DOM; never read a missing row as an
 unset attribute.
 
-`meta.teamDirectory` holds every team id and name from the assignees response
-Intercom sends on page load. It is `null` when the tab was opened before the
-extension loaded.
+`meta.teamDirectory` holds every Intercom team id and name. The capture
+requests it from `/ember/inbox/assignees/teams` with the page's workspace and
+CSRF token, the same GET Intercom makes for its assignee pickers. When the
+request fails, the capture is still saved and `teamDirectory` is
+`{ "error": "<reason>" }`, for example `http-401`, `timeout`, `no-teams`, or
+`no-workspace`. A capture from a build before this request has `null`.
 
 The workspace adds a second block, `#isa-capture-context`, with the build, a
 health check, your settings and what the install ships. See
