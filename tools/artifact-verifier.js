@@ -102,12 +102,10 @@ const EXPECTED_RUNTIME_FILES = new Set([
 
 const DEV_FILE_NAMES = new Set([
   '.git',
-  '.codex',
   '.claude',
   'node_modules',
   'package.json',
   'package-lock.json',
-  'opencode.jsonc',
   'src',
   'tools',
   'test',
