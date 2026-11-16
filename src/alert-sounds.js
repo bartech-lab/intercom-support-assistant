@@ -136,6 +136,12 @@
     }
   }
 
+  function blocked() {
+    if (!AudioContextClass) return false;
+    const ctx = getContext(false);
+    return !ctx || ctx.state !== 'running';
+  }
+
   const GESTURE_EVENTS = ['pointerdown', 'keydown'];
 
   function onFirstGesture(event) {
@@ -156,6 +162,7 @@
   window.ISA_ALERT_SOUNDS = {
     presets: PRESET_ORDER.map((id) => ({ id, label: PRESETS[id].label })),
     defaultId: DEFAULT_ID,
-    play
+    play,
+    blocked
   };
 })();

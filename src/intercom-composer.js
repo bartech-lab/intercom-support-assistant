@@ -126,6 +126,25 @@ const DRAFT_LANGUAGE_CHIP_CLASS = 'isa-draft-language-chip';
 const DRAFT_LANGUAGE_ACTIVE_CLASS = 'isa-draft-language-chip-active';
 const DRAFT_LANGUAGE_STYLE_ID = 'isa-draft-language-style';
 const DRAFT_LANGUAGE_ACTIVE_ATTRIBUTE = 'data-isa-draft-language';
+const SIGNATURE_STATUS_CLASS = 'isa-signature-status';
+const SIGNATURE_STATUS_CHIP_CLASS = 'isa-signature-status-chip';
+const SIGNATURE_STATUS_BOX_CLASS = 'isa-signature-status-box';
+const SIGNATURE_STATUS_BOX_DARK_CLASS = 'isa-signature-status-box-dark';
+const SIGNATURE_STATUS_LINK_CLASS = 'isa-signature-status-link';
+const SIGNATURE_STATUS_STYLE_ID = 'isa-signature-status-style';
+const SIGNATURE_STATUS_REASON_ATTRIBUTE = 'data-isa-signature-status';
+const SIGNATURE_STATUS_OWNER_ATTRIBUTE = 'data-isa-signature-status-owner';
+const SIGNATURE_STATUS_SETTLED_REASONS = new Set(['brand-unclear']);
+const SIGNATURE_STATUS_HEADING = 'No signature here';
+const SIGNATURE_STATUS_MAX_ALIGN_PX = 6;
+const SIGNATURE_STATUS_EDGE_GAP_PX = 8;
+const SIGNATURE_STATUS_BOX_WIDTH_PX = 300;
+const SIGNATURE_STATUS_BOX_GAP_PX = 6;
+
+let signatureStatusPending = { key: null, since: 0 };
+let signatureStatusSettleTimer = null;
+let signatureStatusOpenHolder = null;
+const signatureStatusTargets = new WeakMap();
 
 let draftRecipientLanguageTokens = null;
 let draftRecipientLanguageRecipient = null;
@@ -479,6 +498,7 @@ function refreshComposerLanguagePicker() {
       removeComposerLanguagePicker();
       picker = buildComposerLanguagePicker();
       host.appendChild(picker);
+      alignWithComposerActions(picker, host);
     }
 
     paintComposerLanguagePicker(picker, activeSignatureLanguage());
@@ -504,6 +524,347 @@ function refreshComposerLanguageState() {
   refreshComposerLanguage();
 }
 
+
+const SIGNATURE_STATUS_CSS = `
+  .${SIGNATURE_STATUS_CLASS} {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+    min-width: 0;
+    margin-left: 6px;
+  }
+  .${SIGNATURE_STATUS_CHIP_CLASS} {
+    display: flex;
+    flex: 0 1 auto;
+    min-width: 0;
+    padding: 1px 7px;
+    border: 0;
+    border-radius: 4px;
+    background: #d97706;
+    color: #ffffff;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 16px;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .${SIGNATURE_STATUS_CHIP_CLASS}::before {
+    content: '\\24D8\\00A0';
+    font-weight: 400;
+  }
+  .${SIGNATURE_STATUS_CHIP_CLASS} span {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .${SIGNATURE_STATUS_BOX_CLASS} {
+    position: fixed;
+    z-index: 2147483000;
+    box-sizing: border-box;
+    width: ${SIGNATURE_STATUS_BOX_WIDTH_PX}px;
+    padding: 10px 12px;
+    border: 1px solid #d4d4d4;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #1a1a1a;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 17px;
+    white-space: normal;
+    text-align: left;
+  }
+  .${SIGNATURE_STATUS_BOX_DARK_CLASS} {
+    border-color: rgb(69, 69, 69);
+    background: rgb(38, 38, 38);
+    color: #f2f2f2;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
+  }
+  .${SIGNATURE_STATUS_BOX_CLASS} strong {
+    display: block;
+    margin-bottom: 2px;
+    font-weight: 600;
+  }
+  .${SIGNATURE_STATUS_LINK_CLASS} {
+    display: block;
+    margin-top: 6px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #d97706;
+    font: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  .${SIGNATURE_STATUS_BOX_DARK_CLASS} .${SIGNATURE_STATUS_LINK_CLASS} {
+    color: #fbbf24;
+  }
+`;
+
+function companySignatureStatus(inboxInfo) {
+  if (!normalizedCompanies[inboxInfo.name] || inboxInfo.signatureSafe !== false) return null;
+  if (sidebarLagsConversation()) return null;
+
+  const candidates = [...new Set(Object.values(inboxInfo.sources || {}).filter(Boolean))];
+  if (candidates.length < 2) return null;
+
+  return {
+    reason: 'brand-unclear',
+    key: `brand-unclear:${candidates.join('|')}`,
+    label: 'No signature: brand unclear',
+    detail: `Brand signals point to ${candidates.join(' and ')}. Change the Brand field or move the conversation.`
+  };
+}
+
+function draftSenderStatus() {
+  const email = getSelectedSenderEmail();
+  if (!email || getSenderInboxMapping(email)) return null;
+
+  return {
+    reason: 'sender-unknown',
+    key: `sender-unknown:${email}`,
+    label: 'No signature for this sender',
+    detail: `The extension has no signature for ${email}. Pick a brand sender address, or ask the extension owner to add this one.`,
+    link: false
+  };
+}
+
+function signatureStatusTarget() {
+  const onDraft = isNewConversationView();
+  if (!onDraft && !currentConversationId) return null;
+  if (!onDraft && !getComposerContainer()) return null;
+
+  const editor = detectActualTextField();
+  if (!editor || getComposerMode(editor) !== 'email') return null;
+
+  if (onDraft) return draftSenderStatus() || draftTeamInboxStatus();
+
+  const inboxInfo = detectInboxType();
+  if (!inboxInfo || inboxInfo.type !== 'company') return null;
+  return companySignatureStatus(inboxInfo);
+}
+
+function settledSignatureStatus(target) {
+  if (!target || !SIGNATURE_STATUS_SETTLED_REASONS.has(target.reason)) {
+    signatureStatusPending = { key: null, since: 0 };
+    return target;
+  }
+
+  const now = Date.now();
+  if (signatureStatusPending.key !== target.key) signatureStatusPending = { key: target.key, since: now };
+
+  const remaining = TIMING.signatureStatusSettleMs - (now - signatureStatusPending.since);
+  if (remaining <= 0) return target;
+
+  if (!signatureStatusSettleTimer && typeof setTimeout === 'function') {
+    signatureStatusSettleTimer = setTimeout(() => {
+      signatureStatusSettleTimer = null;
+      refreshSignatureStatus();
+    }, remaining);
+  }
+  return null;
+}
+
+function ownSignatureStatusHolders() {
+  return queryAllIntercom(`.${SIGNATURE_STATUS_CLASS}`)
+    .filter(holder => !ownedByAnotherInstall(holder, SIGNATURE_STATUS_OWNER_ATTRIBUTE));
+}
+
+function signatureStatusChip(holder) {
+  return holder.querySelector(`.${SIGNATURE_STATUS_CHIP_CLASS}`);
+}
+
+function signatureStatusBox(holder) {
+  return holder.querySelector(`.${SIGNATURE_STATUS_BOX_CLASS}`);
+}
+
+function handleSignatureStatusKeydown(event) {
+  if (event.key === 'Escape') closeSignatureStatusBox();
+}
+
+function handleSignatureStatusOutsideClick(event) {
+  const holder = signatureStatusOpenHolder;
+  if (!holder) return;
+  const path = event.composedPath ? event.composedPath() : [];
+  if (path.includes(holder) || holder.contains(event.target)) return;
+  closeSignatureStatusBox();
+}
+
+function closeSignatureStatusBox() {
+  const holder = signatureStatusOpenHolder;
+  if (!holder) return;
+  signatureStatusOpenHolder = null;
+  document.removeEventListener('keydown', handleSignatureStatusKeydown, true);
+  document.removeEventListener('click', handleSignatureStatusOutsideClick, true);
+  window.removeEventListener('resize', closeSignatureStatusBox);
+  window.removeEventListener('scroll', closeSignatureStatusBox, true);
+  signatureStatusBox(holder)?.remove();
+  signatureStatusChip(holder)?.setAttribute('aria-expanded', 'false');
+}
+
+function openSignaturesWorkspace() {
+  if (!extensionRuntimeAlive()) return;
+  try {
+    chrome.runtime.sendMessage({ type: 'open-preview', section: 'signatures' }, () => {
+      void chrome.runtime.lastError;
+    });
+  } catch (error) {
+    debugLog('[Signature] Could not open the signatures page:', error);
+  }
+}
+
+function placeSignatureStatusBox(holder, box) {
+  const chip = signatureStatusChip(holder).getBoundingClientRect();
+  const bar = holder.closest(SELECTORS.composerActionsBar);
+  const rightLimit = (bar ? bar.getBoundingClientRect().right : window.innerWidth) - SIGNATURE_STATUS_EDGE_GAP_PX;
+  const left = Math.max(SIGNATURE_STATUS_EDGE_GAP_PX, Math.min(chip.left, rightLimit - SIGNATURE_STATUS_BOX_WIDTH_PX));
+  box.style.left = `${Math.round(left)}px`;
+  box.style.bottom = `${Math.round(window.innerHeight - chip.top + SIGNATURE_STATUS_BOX_GAP_PX)}px`;
+}
+
+function fillSignatureStatusBox(box, target) {
+  const heading = createOwnElement('strong');
+  heading.textContent = target.heading || SIGNATURE_STATUS_HEADING;
+  const detail = createOwnElement('span');
+  detail.textContent = target.detail;
+  box.replaceChildren(heading, detail);
+  if (target.link === false) return;
+
+  const link = createOwnElement('button');
+  link.type = 'button';
+  link.className = SIGNATURE_STATUS_LINK_CLASS;
+  link.textContent = 'Open signatures';
+  link.addEventListener('mousedown', event => event.preventDefault());
+  link.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    openSignaturesWorkspace();
+  });
+  box.appendChild(link);
+}
+
+function openSignatureStatusBox(holder) {
+  closeSignatureStatusBox();
+
+  const chip = signatureStatusChip(holder);
+  const box = createOwnElement('div');
+  box.className = SIGNATURE_STATUS_BOX_CLASS;
+  if (document.documentElement.classList.contains('dark')) box.classList.add(SIGNATURE_STATUS_BOX_DARK_CLASS);
+
+  fillSignatureStatusBox(box, signatureStatusTargets.get(holder));
+  holder.appendChild(box);
+  chip.setAttribute('aria-expanded', 'true');
+  placeSignatureStatusBox(holder, box);
+
+  signatureStatusOpenHolder = holder;
+  document.addEventListener('keydown', handleSignatureStatusKeydown, true);
+  document.addEventListener('click', handleSignatureStatusOutsideClick, true);
+  window.addEventListener('resize', closeSignatureStatusBox);
+  window.addEventListener('scroll', closeSignatureStatusBox, true);
+}
+
+function buildSignatureStatusHolder() {
+  const holder = createOwnElement('span');
+  holder.className = SIGNATURE_STATUS_CLASS;
+  claimDecoration(holder, SIGNATURE_STATUS_OWNER_ATTRIBUTE);
+  holder.setAttribute('role', 'status');
+
+  const chip = createOwnElement('button');
+  chip.type = 'button';
+  chip.className = SIGNATURE_STATUS_CHIP_CLASS;
+  chip.setAttribute('aria-expanded', 'false');
+  chip.appendChild(createOwnElement('span'));
+  chip.addEventListener('mousedown', event => event.preventDefault());
+  chip.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (signatureStatusOpenHolder === holder) closeSignatureStatusBox();
+    else openSignatureStatusBox(holder);
+  });
+
+  holder.appendChild(chip);
+  return holder;
+}
+
+function paintSignatureStatusHolder(holder, target) {
+  const chip = signatureStatusChip(holder);
+  const label = chip.firstElementChild;
+  if (holder.getAttribute(SIGNATURE_STATUS_REASON_ATTRIBUTE) !== target.reason) {
+    holder.setAttribute(SIGNATURE_STATUS_REASON_ATTRIBUTE, target.reason);
+  }
+  const relabelled = label.textContent !== target.label;
+  if (relabelled) label.textContent = target.label;
+  const previous = signatureStatusTargets.get(holder);
+  signatureStatusTargets.set(holder, target);
+  if (chip.title !== target.detail) chip.title = target.detail;
+  const box = signatureStatusBox(holder);
+  if (box && (!previous || previous.key !== target.key || previous.detail !== target.detail)) {
+    fillSignatureStatusBox(box, target);
+  }
+  return relabelled;
+}
+
+function removeSignatureStatusHolder(holder) {
+  if (signatureStatusOpenHolder === holder) closeSignatureStatusBox();
+  holder.remove();
+}
+
+function fitSignatureStatusHolder(holder, host) {
+  holder.style.maxWidth = '';
+  const overflow = holder.getBoundingClientRect().right - host.getBoundingClientRect().right;
+  if (overflow > 0) holder.style.maxWidth = `${Math.max(0, Math.round(holder.getBoundingClientRect().width - overflow))}px`;
+}
+
+function alignWithComposerActions(element, host) {
+  const bar = host.parentElement;
+  if (!bar || !bar.matches(SELECTORS.composerActionsBar)) return;
+  const actions = bar.lastElementChild;
+  if (!actions || actions === host) return;
+
+  const own = element.getBoundingClientRect();
+  const other = actions.getBoundingClientRect();
+  if (!own.height || !other.height) return;
+
+  const offset = Math.round((own.top + own.height / 2) - (other.top + other.height / 2));
+  if (offset && Math.abs(offset) <= SIGNATURE_STATUS_MAX_ALIGN_PX) {
+    element.style.position = 'relative';
+    element.style.top = `${-offset}px`;
+  }
+}
+
+function refreshSignatureStatus() {
+  safeExecute(() => {
+    const target = settledSignatureStatus(signatureStatusTarget());
+    const own = ownSignatureStatusHolders();
+    if (!target) {
+      own.forEach(removeSignatureStatusHolder);
+      return;
+    }
+
+    const host = composerLanguagePickerHost();
+    if (!host) return;
+
+    let holder = own.find(candidate => candidate.parentElement === host) || null;
+    own.filter(candidate => candidate !== holder).forEach(removeSignatureStatusHolder);
+
+    if (!holder) {
+      if (host.querySelector(`.${SIGNATURE_STATUS_CLASS}`)) return;
+      injectStyleOnce(SIGNATURE_STATUS_STYLE_ID, SIGNATURE_STATUS_CSS);
+      holder = buildSignatureStatusHolder();
+      paintSignatureStatusHolder(holder, target);
+      host.appendChild(holder);
+      alignWithComposerActions(holder, host);
+      fitSignatureStatusHolder(holder, host);
+    } else if (paintSignatureStatusHolder(holder, target)) {
+      fitSignatureStatusHolder(holder, host);
+    }
+
+  }, 'refreshSignatureStatus');
+}
 
 function insertSignatureHtml(editor, html, language = null) {
   const signatureHtml = html.replace(/^<br>/, '');

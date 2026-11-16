@@ -7,6 +7,66 @@ function extensionRuntimeAlive() {
 }
 
 const OWNED_FAVICON_ATTRIBUTE = 'data-isa-alert-favicon';
+const SOUND_BLOCKED_NOTICE_ID = 'isa-sound-blocked-notice';
+const SOUND_BLOCKED_NOTICE_TEXT = 'A new message alert had no sound. Click anywhere on this page to turn the sound on.';
+const SOUND_BLOCKED_NOTICE_STYLE = {
+  position: 'fixed',
+  bottom: '16px',
+  left: '16px',
+  zIndex: '2000000000',
+  maxWidth: 'min(360px, calc(100vw - 32px))',
+  boxSizing: 'border-box',
+  padding: '8px 12px',
+  border: '1px solid #f59e0b',
+  borderRadius: '8px',
+  boxShadow: '0 8px 24px rgba(15, 23, 42, 0.3)',
+  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontSize: '13px',
+  lineHeight: '1.4',
+  textAlign: 'left',
+  pointerEvents: 'none'
+};
+
+const SOUND_BLOCKED_NOTICE_DARK = { background: '#1f2937', color: '#ffffff' };
+const SOUND_BLOCKED_NOTICE_LIGHT = { background: '#ffffff', color: '#111827' };
+
+function pageBackgroundIsLight() {
+  const corner = typeof document.elementFromPoint === 'function'
+    ? document.elementFromPoint(24, Math.max(0, window.innerHeight - 24))
+    : null;
+  for (let element = corner || document.body; element; element = element.parentElement || element.getRootNode().host || null) {
+    const match = /^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)$/.exec(getComputedStyle(element).backgroundColor);
+    if (!match || match[4] === '0') continue;
+    return (0.299 * match[1] + 0.587 * match[2] + 0.114 * match[3]) > 140;
+  }
+  return false;
+}
+
+function showSoundBlockedNotice() {
+  if (!document.body || document.getElementById(SOUND_BLOCKED_NOTICE_ID)) return;
+
+  const notice = document.createElement('div');
+  notice.id = SOUND_BLOCKED_NOTICE_ID;
+  notice.setAttribute('data-isa-own', '');
+  notice.setAttribute('role', 'status');
+  notice.textContent = SOUND_BLOCKED_NOTICE_TEXT;
+  Object.assign(notice.style, SOUND_BLOCKED_NOTICE_STYLE,
+    pageBackgroundIsLight() ? SOUND_BLOCKED_NOTICE_LIGHT : SOUND_BLOCKED_NOTICE_DARK);
+
+  const dismiss = () => {
+    document.removeEventListener('pointerdown', dismiss, true);
+    document.removeEventListener('keydown', dismiss, true);
+    notice.remove();
+  };
+  document.addEventListener('pointerdown', dismiss, true);
+  document.addEventListener('keydown', dismiss, true);
+  document.body.appendChild(notice);
+}
+
+function showSoundBlockedNoticeIfSilent() {
+  const sounds = window.ISA_ALERT_SOUNDS;
+  if (sounds && typeof sounds.blocked === 'function' && sounds.blocked()) showSoundBlockedNotice();
+}
 
 function getFaviconLink(create) {
   let link = document.querySelector('link[rel~="icon"]');

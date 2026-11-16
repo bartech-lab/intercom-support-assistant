@@ -400,6 +400,7 @@ const TIMING = {
   mutationThrottleMs: 100,
   alertSettleMs: 1500,
   listStateGraceMs: 2000,
+  signatureStatusSettleMs: 2000,
   passHeartbeatMs: 1000
 };
 

@@ -5,6 +5,7 @@ runWithPassCache(() => {
   safeExecute(refreshDuplicateCustomerHighlights, 'Initial refreshDuplicateCustomerHighlights');
   safeExecute(refreshSupportOriginHighlights, 'Initial refreshSupportOriginHighlights');
   safeExecute(refreshComposerLanguageState, 'Initial refreshComposerLanguageState');
+  safeExecute(refreshSignatureStatus, 'Initial refreshSignatureStatus');
   safeExecute(refreshIntercomAttachments, 'Initial refreshIntercomAttachments');
 });
 
@@ -117,6 +118,7 @@ const observer = new MutationObserver((mutations) => {
       safeExecute(refreshSupportOriginHighlights, 'MutationObserver refreshSupportOriginHighlights');
       safeExecute(syncTeamInboxFromSender, 'MutationObserver syncTeamInboxFromSender');
       safeExecute(refreshComposerLanguageState, 'MutationObserver refreshComposerLanguageState');
+      safeExecute(refreshSignatureStatus, 'MutationObserver refreshSignatureStatus');
       safeExecute(refreshIntercomAttachments, 'MutationObserver refreshIntercomAttachments');
       safeExecute(refreshTemporaryNoteControls, 'MutationObserver refreshTemporaryNoteControls');
       safeExecute(refreshTemporaryNoteFooters, 'MutationObserver refreshTemporaryNoteFooters');
@@ -142,6 +144,7 @@ const observer = new MutationObserver((mutations) => {
         safeExecute(refreshDuplicateCustomerHighlights, 'trailing refreshDuplicateCustomerHighlights');
         safeExecute(refreshSupportOriginHighlights, 'trailing refreshSupportOriginHighlights');
         safeExecute(refreshComposerLanguageState, 'trailing refreshComposerLanguageState');
+        safeExecute(refreshSignatureStatus, 'trailing refreshSignatureStatus');
         safeExecute(refreshIntercomAttachments, 'trailing refreshIntercomAttachments');
         safeExecute(refreshTemporaryNoteControls, 'trailing refreshTemporaryNoteControls');
         safeExecute(refreshTemporaryNoteFooters, 'trailing refreshTemporaryNoteFooters');

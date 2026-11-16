@@ -25,8 +25,11 @@ Tests:
 - `test/intercom/new-conversation-composer.test.js`
 - `test/intercom/signature-normalizer-edges.test.js`
 - `test/intercom/signature-rewrite-conversation-scope.test.js`
+- `test/intercom/signature-status-draft.test.js`
+- `test/intercom/signature-status.test.js`
 - `test/intercom/signatures.test.js`
 - `test/intercom/support-warnings.test.js`
+- `test/intercom/team-inbox-not-set-hint.test.js`
 - `test/tools/validate-signatures.test.js`
 
 ## Language detection
@@ -101,6 +104,7 @@ Tests:
 - `test/background/alert-sounds-schedule.test.js`
 - `test/background/alert-sounds.test.js`
 - `test/background/background-alert-notification-edges.test.js`
+- `test/background/sound-blocked-notice.test.js`
 - `test/intercom/alert-visuals-edges.test.js`
 - `test/intercom/alert-visuals.test.js`
 - `test/intercom/boot-alerts-and-middle-click.test.js`

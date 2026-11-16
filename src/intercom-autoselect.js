@@ -150,6 +150,9 @@ function getSenderInboxMapping(email) {
   return typeof label === 'string' && label.trim() ? label : null;
 }
 
+let teamInboxFailure = null;
+let teamInboxApplyEmail = null;
+
 function setTeamInboxAttribute(targetLabel) {
   const supersedingPrevious = applyingTeamInbox;
   if (supersedingPrevious) safeExecute(closeOpenAssignMenu, 'closeOpenAssignMenu', false);
@@ -203,6 +206,7 @@ function setTeamInboxAttribute(targetLabel) {
 
       const current = getVisibleTeamInboxName();
       if (current && inboxKey(current) === inboxKey(targetLabel)) {
+        teamInboxFailure = null;
         finish();
         return;
       }
@@ -219,6 +223,9 @@ function setTeamInboxAttribute(targetLabel) {
       if (attempts >= TEAM_INBOX_SELECT_MAX_ATTEMPTS) {
         if (inboxKey(getVisibleTeamInboxName() || '') !== inboxKey(targetLabel)) {
           closeOpenAssignMenu();
+          teamInboxFailure = { email: teamInboxApplyEmail, target: targetLabel, seen: getVisibleTeamInboxName() || '' };
+        } else {
+          teamInboxFailure = null;
         }
         finish();
         return;
@@ -251,6 +258,22 @@ function resolveDraftSenderCompany() {
   }
 
   return getCompanyFromInboxName(label);
+}
+
+function draftTeamInboxStatus() {
+  const failure = teamInboxFailure;
+  if (!failure || applyingTeamInbox) return null;
+  if (getSelectedSenderEmail() !== failure.email) return null;
+  if ((getVisibleTeamInboxName() || '') !== failure.seen) return null;
+
+  return {
+    reason: 'team-inbox-not-set',
+    key: `team-inbox-not-set:${failure.target}`,
+    label: 'Team Inbox not set',
+    heading: 'Team Inbox not set',
+    detail: `The extension could not select ${failure.target} automatically. Pick the Team Inbox by hand.`,
+    link: false
+  };
 }
 
 function syncTeamInboxFromSender(userInitiated = false) {
@@ -296,6 +319,7 @@ function syncTeamInboxFromSender(userInitiated = false) {
   teamInboxApplyCount += 1;
 
   lastAppliedSenderEmail = email;
+  teamInboxApplyEmail = email;
   setTeamInboxAttribute(targetLabel);
 }
 
