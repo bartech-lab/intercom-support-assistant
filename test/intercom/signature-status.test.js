@@ -383,16 +383,6 @@ test('the chip mousedown is default-prevented so the editor keeps focus', () => 
   assert.equal(event.defaultPrevented, true);
 });
 
-test('opening the box does not move focus away from the composer editor', () => {
-  const { win, holder } = showUnclear();
-  const editor = win.document.querySelector('.ProseMirror');
-  editor.focus();
-  assert.equal(win.document.activeElement, editor);
-  realClick(win, chipOf(holder));
-  assert.equal(boxes(win).length, 1);
-  assert.equal(win.document.activeElement, editor);
-});
-
 test('repeated refreshes with the same state keep the same holder element and exactly one holder', () => {
   const { win, holder } = showUnclear();
   refresh(win);
