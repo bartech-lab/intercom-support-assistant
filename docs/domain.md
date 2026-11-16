@@ -26,6 +26,7 @@ Tests:
 - `test/intercom/signature-normalizer-edges.test.js`
 - `test/intercom/signature-rewrite-conversation-scope.test.js`
 - `test/intercom/signature-status-draft.test.js`
+- `test/intercom/signature-status-gaps.test.js`
 - `test/intercom/signature-status.test.js`
 - `test/intercom/signatures.test.js`
 - `test/intercom/support-warnings.test.js`
