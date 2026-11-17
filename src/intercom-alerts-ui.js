@@ -307,7 +307,7 @@ function playAlertSoundOnce() {
     if (window.ISA_ALERT_SOUNDS && typeof window.ISA_ALERT_SOUNDS.play === 'function') {
       window.ISA_ALERT_SOUNDS.play(alertSettings.sound);
     }
-    showSoundBlockedNoticeIfSilent();
+    showSoundBlockedNoticeIfSilent(alertSettings.sound);
   } catch (error) {}
 }
 

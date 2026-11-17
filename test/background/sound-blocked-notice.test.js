@@ -49,9 +49,9 @@ function loadSounds(audio) {
   return win;
 }
 
-function blockedOf(win) {
+function blockedOf(win, sound) {
   assert.equal(typeof win.ISA_ALERT_SOUNDS.blocked, 'function');
-  return win.ISA_ALERT_SOUNDS.blocked();
+  return win.ISA_ALERT_SOUNDS.blocked(sound);
 }
 
 function notices(win) {
@@ -106,6 +106,16 @@ test('blocked() is false when the browser has no AudioContext at all', () => {
   assert.equal(win.AudioContext, undefined);
   assert.equal(blockedOf(win), false);
 });
+
+for (const audio of ['none', 'suspended']) {
+  test(`blocked() is false for the Silent preset, which has nothing to play (${audio})`, () => {
+    const win = loadSounds(audio);
+    setAudioState(win, audio);
+    assert.equal(blockedOf(win, 'silent'), false);
+    assert.equal(blockedOf(win, 'blink-blink'), true);
+    assert.equal(blockedOf(win, 'no-such-preset'), true);
+  });
+}
 
 test('showSoundBlockedNotice appends one status element with the exact text and the own marker', () => {
   const win = loadPlain();
@@ -248,8 +258,8 @@ function makeIntercomChrome(initialStore) {
   };
 }
 
-function buildIntercom({ audio }) {
-  const chrome = makeIntercomChrome({ isaAlertEnabled: true, isaAlertEnabledInboxes: [ALERT_TEAM] });
+function buildIntercom({ audio, sound }) {
+  const chrome = makeIntercomChrome({ isaAlertEnabled: true, isaAlertEnabledInboxes: [ALERT_TEAM], ...(sound ? { isaAlertSound: sound } : {}) });
   const played = [];
   const clock = { now: Date.now() };
   const html = fx.inboxHtml({
@@ -310,6 +320,16 @@ for (const audio of ['none', 'suspended']) {
     assert.equal(notices(ctx.win)[0].textContent, NOTICE_TEXT);
   });
 }
+
+test('intercom: an alert with the Silent preset shows no notice while the sound is blocked', () => {
+  const ctx = buildIntercom({ audio: 'suspended', sound: 'silent' });
+  assert.equal(blockedOf(ctx.win), true);
+  ctx.setCount(3);
+  ctx.evaluate();
+  assert.equal(ctx.alertsSent().length, 1);
+  assert.deepEqual(ctx.played, ['silent']);
+  assert.equal(notices(ctx.win).length, 0);
+});
 
 test('intercom: a new-message alert shows no notice when the sound can play', () => {
   const ctx = buildIntercom({ audio: 'running' });

@@ -63,9 +63,9 @@ function showSoundBlockedNotice() {
   document.body.appendChild(notice);
 }
 
-function showSoundBlockedNoticeIfSilent() {
+function showSoundBlockedNoticeIfSilent(soundId) {
   const sounds = window.ISA_ALERT_SOUNDS;
-  if (sounds && typeof sounds.blocked === 'function' && sounds.blocked()) showSoundBlockedNotice();
+  if (sounds && typeof sounds.blocked === 'function' && sounds.blocked(soundId)) showSoundBlockedNotice();
 }
 
 function getFaviconLink(create) {

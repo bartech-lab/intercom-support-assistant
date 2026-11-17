@@ -136,8 +136,9 @@
     }
   }
 
-  function blocked() {
+  function blocked(id) {
     if (!AudioContextClass) return false;
+    if (id && PRESETS[id] && !PRESETS[id].notes.length) return false;
     const ctx = getContext(false);
     return !ctx || ctx.state !== 'running';
   }
