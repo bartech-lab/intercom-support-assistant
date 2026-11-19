@@ -26,7 +26,7 @@ const GROUPED = {
   alertGroups: [{ label: 'ALDER', ids: ['90005450'], detail: [] }]
 };
 
-function load({ signatureData = DATA, store = {}, noStorage = false, deferGet = false, readyState = null, noSendMessage = false, attrs = 'data-isa-expanded="true"' } = {}) {
+function load({ signatureData = DATA, store = {}, noStorage = false, deferGet = false, readyState = null, noSendMessage = false, attrs = 'data-isa-expanded="true"', notificationLevel = null, levelError = false } = {}) {
   const changeListeners = [];
   const writes = [];
   const pendingReads = [];
@@ -56,6 +56,15 @@ function load({ signatureData = DATA, store = {}, noStorage = false, deferGet = 
     },
     runtime: { lastError: null }
   };
+  if (notificationLevel) {
+    win.chrome.notifications = {
+      getPermissionLevel(callback) {
+        win.chrome.runtime.lastError = levelError ? { message: 'unavailable' } : null;
+        callback(levelError ? undefined : notificationLevel);
+        win.chrome.runtime.lastError = null;
+      }
+    };
+  }
   win.SIGNATURE_DATA = signatureData;
   const ctx = dom.getInternalVMContext();
   const run = () => {
@@ -147,7 +156,7 @@ test('test button: sends exactly { type: "alert-test" } once and shows Testingâ€
 const OUTCOMES = [
   ['no response', undefined, /^This browser cannot show notifications\.$/, true],
   ['level unavailable', { level: 'unavailable' }, /^This browser cannot show notifications\.$/, true],
-  ['level denied', { level: 'denied' }, /^Notifications are off for this extension\./, true],
+  ['level denied', { level: 'denied' }, /^Notifications are turned off for this extension, .*remove the extension and add it again/, true],
   ['ok false', { level: 'granted', ok: false }, /^Notification blocked\./, true],
   ['ok true', { level: 'granted', ok: true }, /^Test sent\./, false]
 ];
@@ -325,3 +334,31 @@ test('mode: data-isa-expanded wins over data-isa-compact and keeps the sound con
   assert.ok(soundSelect(panel));
   win.close();
 });
+
+const popupsOff = panel => panel.querySelector('[data-isa="popupsOff"]');
+
+test('pop-ups notice: shown on open when Chrome reports pop-ups turned off, with the way back', async () => {
+  const { win, panel } = load({ store: { isaAlertEnabled: true }, notificationLevel: 'denied' });
+  await settled();
+  const notice = popupsOff(panel);
+  assert.ok(notice, 'the notice element exists');
+  assert.equal(notice.hidden, false);
+  assert.match(notice.textContent, /^Notifications are turned off for this extension, so alerts only play the sound\./);
+  assert.match(notice.textContent, /remove the extension and add it again/);
+  win.close();
+});
+
+for (const [name, options] of [
+  ['pop-ups allowed', { notificationLevel: 'granted' }],
+  ['the level cannot be read', { notificationLevel: 'denied', levelError: true }],
+  ['no notifications API, as on the preview page', {}]
+]) {
+  test(`pop-ups notice: stays hidden when ${name}`, async () => {
+    const { win, panel } = load({ store: { isaAlertEnabled: true }, ...options });
+    await settled();
+    const notice = popupsOff(panel);
+    assert.ok(notice, 'the notice element exists');
+    assert.equal(notice.hidden, true);
+    win.close();
+  });
+}

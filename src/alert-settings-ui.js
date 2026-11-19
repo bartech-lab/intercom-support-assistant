@@ -250,6 +250,7 @@
           <div class="isa-alert-section-label">Not getting alerts?</div>
           <button type="button" class="isa-alert-test" data-isa="test">Send a test alert</button>
           <div class="isa-alert-test-status" data-isa="testStatus" role="status" aria-live="polite" hidden></div>
+          <div class="isa-alert-test-status isa-alert-test-bad" data-isa="popupsOff" role="status" hidden></div>
         </div>
         <div class="isa-alert-section-label">Alert sound</div>
         <div class="isa-alert-sound">
@@ -277,6 +278,7 @@
     const previewEl = container.querySelector('[data-isa="preview"]');
     const testEl = container.querySelector('[data-isa="test"]');
     const testStatusEl = container.querySelector('[data-isa="testStatus"]');
+    const popupsOffEl = container.querySelector('[data-isa="popupsOff"]');
     const storageStatusEl = container.querySelector('[data-isa="storageStatus"]');
 
     if (!useCompact) {
@@ -561,6 +563,16 @@
         }
       });
 
+      const POPUPS_OFF = 'Notifications are turned off for this extension, so alerts only play the sound. To get them back, export your settings in Tools, remove the extension and add it again, then import them.';
+      if (typeof chrome !== 'undefined' && chrome.notifications && typeof chrome.notifications.getPermissionLevel === 'function') {
+        try {
+          chrome.notifications.getPermissionLevel((level) => {
+            if (chrome.runtime && chrome.runtime.lastError) return;
+            popupsOffEl.textContent = POPUPS_OFF;
+            popupsOffEl.hidden = level !== 'denied';
+          });
+        } catch (error) {}
+      }
       const GUIDANCE = 'No banner? Allow notifications for your browser in system settings and turn off Do Not Disturb. ' + platform.soundGuidance;
       function setTestStatus(text, bad) {
         testStatusEl.hidden = false;
@@ -571,7 +583,7 @@
         if (!resp || resp.level === 'unavailable') {
           setTestStatus('This browser cannot show notifications.', true);
         } else if (resp.level === 'denied') {
-          setTestStatus('Notifications are off for this extension. Turn them on in your browser settings, then test again.', true);
+          setTestStatus(POPUPS_OFF, true);
         } else if (!resp.ok) {
           setTestStatus('Notification blocked. ' + GUIDANCE, true);
         } else {

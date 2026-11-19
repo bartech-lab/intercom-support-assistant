@@ -355,7 +355,7 @@ test('the preview button plays the selected sound, and the test button reports e
 
   win.chrome.runtime.sendMessage = (msg, cb) => cb({ level: 'denied' });
   panel.querySelector('[data-isa="test"]').click();
-  assert.match(status.textContent, /Notifications are off/);
+  assert.match(status.textContent, /^Notifications are turned off for this extension/);
   assert.ok(status.classList.contains('isa-alert-test-bad'));
 
   win.chrome.runtime.sendMessage = (msg, cb) => cb({ level: 'granted', ok: true });

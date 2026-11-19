@@ -12,6 +12,10 @@ tab. Direct links work too: `#signatures`, `#settings`, `#tools`.
   text.
 - **Settings** holds the new-message alerts: the master switch, which inboxes to
   watch, **Your inbox**, the sound, and a test button.
+  When Chrome reports notifications turned off for the extension, it says so on open:
+  alerts then only play the sound. Chrome offers no reliable way to undo that
+  for an extension, so it advises exporting settings,
+  removing and adding the extension, and importing them.
 - **Tools** holds the three cards below.
 
 Switching sections keeps search text, language tabs, and scroll positions.
