@@ -20,6 +20,8 @@
   var NEXUS_KIND = 'nexus-frame';
   var ESCALATION_STATUS_KIND = 'conversation-escalation-status';
   var ESCALATION_STATUS_VISIBILITY_KIND = 'escalation-status-visibility';
+  var SELF_ADMIN_KIND = 'self-admin';
+  var SELF_ADMIN_PATH = /^\/ember\/admins\/teammate_app_settings\/(\d{1,20})$/;
 
   var INBOXES_PATH = /^\/ember\/inbox\/inboxes\/inboxes$/;
   var DESCRIPTORS_PATH = /^\/ember\/conversation_attributes\/descriptors$/;
@@ -80,7 +82,7 @@
   var temporaryNoteArm = null;
 
   function envelopeSlot(envelope) {
-    if (envelope.kind === COUNTS_KIND || envelope.kind === NEXUS_KIND) return envelope.kind;
+    if (envelope.kind === COUNTS_KIND || envelope.kind === NEXUS_KIND || envelope.kind === SELF_ADMIN_KIND) return envelope.kind;
     if (envelope.kind === LIST_STATE_KIND) return envelope.kind + '::' + envelope.inboxKey;
     if (envelope.kind === CONTACT_KIND) return envelope.kind + '::' + envelope.userId;
     if (envelope.kind === LIST_IDENTITY_KIND) return envelope.kind + '::' + envelope.inboxKey;
@@ -996,6 +998,15 @@
     return { teamIds: teamIds };
   }
 
+  function postSelfAdmin(adminId) {
+    var envelope = {};
+    envelope[MARKER] = true;
+    envelope.version = ENVELOPE_VERSION;
+    envelope.kind = SELF_ADMIN_KIND;
+    envelope.adminId = adminId;
+    send(envelope);
+  }
+
   function postEscalationStatusVisibility(visibility) {
     var envelope = {};
     envelope[MARKER] = true;
@@ -1221,6 +1232,8 @@
               observeDescriptorsResponse(response, requestUrl);
             } catch (error) {}
           }).catch(function () {});
+        } else if (method === 'GET' && SELF_ADMIN_PATH.test(requestUrl.pathname)) {
+          postSelfAdmin(SELF_ADMIN_PATH.exec(requestUrl.pathname)[1]);
         } else {
           var userMatch = USER_PATH.exec(requestUrl.pathname);
           if (userMatch) {

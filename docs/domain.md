@@ -111,6 +111,7 @@ Tests:
 - `test/intercom/boot-alerts-and-middle-click.test.js`
 - `test/intercom/inbox-alert-edges.test.js`
 - `test/intercom/inbox-alert-internals.test.js`
+- `test/intercom/inbox-alert-network-fallback.test.js`
 - `test/intercom/inbox-alert.test.js`
 - `test/ui/alert-settings-ui-labels-hint.test.js`
 - `test/ui/alert-settings-ui-seed-filter-summary.test.js`

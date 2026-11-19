@@ -21,7 +21,8 @@
 
   const DERIVED_KEYS = [
     'isaAlertRoster',
-    'isaAlertLastSeen'
+    'isaAlertLastSeen',
+    'isaAlertYourInboxAdmin'
   ];
 
   const DEBUG_FLAGS = [

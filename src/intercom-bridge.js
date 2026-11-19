@@ -43,7 +43,10 @@ const NETWORK_INBOX_MAX_KEYS = 100;
 const NETWORK_INBOX_MAX_COUNT = 1000000;
 const NETWORK_INBOX_MAX_ENTRIES_PER_ENVELOPE = 50;
 const NEXUS_WALK_MAX_OBJECTS = 2000;
+const NETWORK_COUNTERS_FRESH_MS = 10000;
+const NETWORK_COUNTERS_MAX_ENTRIES = 5000;
 let networkInboxObservedNormalIntervalMs = null;
+let networkCounters = null;
 
 const networkLanguageByConversation = new Map();
 const networkCompanyByConversation = new Map();
@@ -529,6 +532,32 @@ function rememberCountsFromNexusPayload(payload, observedAt) {
   if (entries.length) rememberNetworkInboxCounts(entries, observedAt);
 }
 
+function rememberCountersUpdated(payload, observedAt) {
+  const data = payload.eventData;
+  if (!data || !Array.isArray(data.counters) || data.counters.length > NETWORK_COUNTERS_MAX_ENTRIES) return;
+  if (networkCounters && observedAt < networkCounters.at) return;
+  const byId = new Map();
+  data.counters.forEach((entry) => {
+    if (!Array.isArray(entry) || entry.length !== 2) return;
+    const id = String(entry[0]);
+    const count = entry[1];
+    if (!INTERCOM_BRIDGE_INBOX_ID_TOKEN.test(id)) return;
+    if (typeof count !== 'number' || count < 0 || count > NETWORK_INBOX_MAX_COUNT || Math.floor(count) !== count) return;
+    byId.set(id, count);
+  });
+  networkCounters = { at: observedAt, byId, missingIsZero: data.treat_missing_assignees_as_zero === true };
+  if (typeof evaluateInboxAlerts === 'function') safeExecute(evaluateInboxAlerts, 'countersUpdated evaluateInboxAlerts');
+}
+
+function networkAssigneeCount(id, now = Date.now()) {
+  if (!networkCounters) return null;
+  const ageMs = now - networkCounters.at;
+  if (ageMs < 0 || ageMs > NETWORK_COUNTERS_FRESH_MS) return null;
+  const key = String(id);
+  if (networkCounters.byId.has(key)) return networkCounters.byId.get(key);
+  return networkCounters.missingIsZero ? 0 : null;
+}
+
 function isValidTemporaryNoteToken(value) {
   return typeof value === 'string' && INTERCOM_BRIDGE_TEMPORARY_NOTE_TOKEN.test(value);
 }
@@ -589,6 +618,13 @@ function handleIntercomBridgeMessage(event) {
     return;
   }
 
+  if (data.kind === 'self-admin') {
+    if (typeof data.adminId === 'string' && /^\d{1,20}$/.test(data.adminId) && typeof rememberYourInboxAdmin === 'function') {
+      safeExecute(() => rememberYourInboxAdmin(data.adminId), 'selfAdmin');
+    }
+    return;
+  }
+
   if (data.kind === 'inbox-counts' && isValidInboxCountsEnvelope(data)) {
     rememberNetworkInboxCounts(data.counts, data.observedAt);
     return;
@@ -599,7 +635,9 @@ function handleIntercomBridgeMessage(event) {
       (data.observedAt === undefined || (Number.isFinite(data.observedAt)
         && data.observedAt >= 0 && data.observedAt <= Date.now()))) {
     safeExecute(() => {
-      rememberCountsFromNexusPayload(JSON.parse(data.data), data.observedAt);
+      const payload = JSON.parse(data.data);
+      if (payload && payload.eventName === 'CountersUpdated') rememberCountersUpdated(payload, data.observedAt ?? Date.now());
+      else rememberCountsFromNexusPayload(payload, data.observedAt);
     }, 'nexusFrameCounts');
     return;
   }

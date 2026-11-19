@@ -58,9 +58,9 @@ described in [dom-capture.md](dom-capture.md).
 ```
 
 Only the keys in `BACKUP_KEYS` (`src/support-tools-ui.js`) are exported. The
-alert roster and the per-inbox last-seen counts are deliberately left out: the
-roster is rediscovered from the live Inbox, and restoring a stale baseline would
-change which alerts fire.
+alert roster, the per-inbox last-seen counts and the learned Your inbox admin
+id are deliberately left out: the roster and the id are rediscovered from the
+live Inbox, and restoring a stale baseline would change which alerts fire.
 
 **Import settings** merges the file over current storage and never clears it
 first, because an interrupted clear would leave no settings at all. A higher

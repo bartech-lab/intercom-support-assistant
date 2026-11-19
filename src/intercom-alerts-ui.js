@@ -5,7 +5,8 @@ const ALERT_STORAGE_KEYS = {
   sound: 'isaAlertSound',
   lastSeen: 'isaAlertLastSeen',
   debug: 'isaAlertDebug',
-  yourInbox: 'isaAlertYourInbox'
+  yourInbox: 'isaAlertYourInbox',
+  yourInboxAdmin: 'isaAlertYourInboxAdmin'
 };
 const DEBUG_STORAGE_KEY = 'isaDebug';
 const ALERT_BLINK_MS = 800;
@@ -45,6 +46,7 @@ let alertLastSeen = {};
 
 let alertPendingCounts = {};
 let alertSettleTimer = null;
+let alertYourInboxAdmin = null;
 var alertClock = () => Date.now();
 let alertDebugEnabled = false;
 
@@ -100,6 +102,7 @@ function initAlertSettingsSync() {
       [ALERT_STORAGE_KEYS.roster]: null,
       [ALERT_STORAGE_KEYS.debug]: false,
       [ALERT_STORAGE_KEYS.yourInbox]: true,
+      [ALERT_STORAGE_KEYS.yourInboxAdmin]: null,
       [DEBUG_STORAGE_KEY]: false
     },
     (result) => {
@@ -113,6 +116,7 @@ function initAlertSettingsSync() {
       alertSettings.sound = result[ALERT_STORAGE_KEYS.sound] || ALERT_DEFAULT_SOUND;
       alertLastSeen = normalizeLastSeen(result[ALERT_STORAGE_KEYS.lastSeen]);
       alertRoster = mergeRoster(alertRoster, result[ALERT_STORAGE_KEYS.roster]);
+      alertYourInboxAdmin = alertYourInboxAdmin || normalizeYourInboxAdmin(result[ALERT_STORAGE_KEYS.yourInboxAdmin]);
       safeExecute(evaluateInboxAlerts, 'initAlertSettingsSync evaluate');
     }
   );
@@ -342,18 +346,53 @@ function persistAlertLastSeen() {
   } catch (error) {}
 }
 
-function alertNetworkInboxIdentity(teamId) {
-  if (teamId !== ALERT_YOUR_INBOX_ID) {
-    return { inboxType: 'team', inboxId: String(teamId) };
-  }
+function alertWorkspaceId() {
+  const match = window.location.pathname.match(/^\/a\/inbox\/([A-Za-z0-9_-]+)(?:\/|$)/);
+  return match ? match[1] : null;
+}
 
+function normalizeYourInboxAdmin(value) {
+  if (!value || typeof value !== 'object') return null;
+  if (typeof value.workspace !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(value.workspace)) return null;
+  if (typeof value.adminId !== 'string' || !/^\d{1,20}$/.test(value.adminId)) return null;
+  return { workspace: value.workspace, adminId: value.adminId };
+}
+
+function rememberYourInboxAdmin(adminId) {
+  const workspace = alertWorkspaceId();
+  if (!workspace || !/^\d{1,20}$/.test(adminId)) return;
+  if (alertYourInboxAdmin && alertYourInboxAdmin.workspace === workspace && alertYourInboxAdmin.adminId === adminId) return;
+  alertYourInboxAdmin = { workspace, adminId };
+  const storage = alertStorageLocal();
+  if (!storage) return;
+  try { storage.set({ [ALERT_STORAGE_KEYS.yourInboxAdmin]: alertYourInboxAdmin }); } catch (error) {}
+}
+
+function alertYourInboxNavAdminId() {
   const ids = alertFindYourInboxNavLinks()
     .map(link => (link.getAttribute('href') || link.href || '').match(/\/inbox\/admin\/([A-Za-z0-9_-]+)(?:\?|$)/))
     .filter(Boolean)
     .map(match => match[1]);
   const uniqueIds = [...new Set(ids)];
-  if (uniqueIds.length !== 1) return null;
-  return { inboxType: 'admin', inboxId: uniqueIds[0] };
+  return uniqueIds.length === 1 ? uniqueIds[0] : null;
+}
+
+function alertYourInboxAdminId() {
+  const navId = alertYourInboxNavAdminId();
+  if (navId) {
+    rememberYourInboxAdmin(navId);
+    return navId;
+  }
+  const workspace = alertWorkspaceId();
+  return alertYourInboxAdmin && workspace && alertYourInboxAdmin.workspace === workspace ? alertYourInboxAdmin.adminId : null;
+}
+
+function alertNetworkInboxIdentity(teamId) {
+  if (teamId !== ALERT_YOUR_INBOX_ID) {
+    return { inboxType: 'team', inboxId: String(teamId) };
+  }
+  const adminId = alertYourInboxAdminId();
+  return adminId ? { inboxType: 'admin', inboxId: adminId } : null;
 }
 
 function logNetworkInboxCountDisagreement(teamId, domCount) {
@@ -367,9 +406,14 @@ function logNetworkInboxCountDisagreement(teamId, domCount) {
 
 function resolveAlertInboxCount(teamId) {
   const domCount = readInboxUnreadCount(teamId);
-  if (domCount === null) return null;
-  logNetworkInboxCountDisagreement(teamId, domCount);
-  return domCount;
+  if (domCount !== null) {
+    if (teamId === ALERT_YOUR_INBOX_ID) alertYourInboxAdminId();
+    logNetworkInboxCountDisagreement(teamId, domCount);
+    return domCount;
+  }
+  if (alertFindFolderNavLinks(teamId).length || typeof networkAssigneeCount !== 'function') return null;
+  const identity = alertNetworkInboxIdentity(teamId);
+  return identity ? networkAssigneeCount(identity.inboxId) : null;
 }
 
 function baselineInboxes(teamIds) {

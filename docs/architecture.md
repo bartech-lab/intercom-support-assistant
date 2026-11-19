@@ -155,6 +155,16 @@ notification. A reload of an inbox with an unread conversation stays quiet.
 Reading fails closed. A badge that is missing, or an inbox pinned twice whose
 two badges disagree, is unreadable rather than zero.
 
+An agent can hide the left inbox sidebar, which removes every navigation link.
+Only then does the alert read the inbox count from the latest `CountersUpdated`
+frame on Intercom's live socket, which keeps arriving about every 2 seconds with
+the sidebar hidden. A frame older than 10 seconds is ignored, so the inbox stays
+unreadable rather than stale. A visible navigation link always wins. Your inbox
+needs the agent's own admin id: the page hook reads it from the URL of the
+teammate settings request Intercom makes on every load, and the visible Your
+inbox link supplies it too. It is stored per workspace as
+`isaAlertYourInboxAdmin`.
+
 The notification id carries the tab and window, so a click still focuses the
 right tab after the service worker has restarted and lost its memory.
 
