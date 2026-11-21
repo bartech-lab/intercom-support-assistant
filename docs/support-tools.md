@@ -3,7 +3,7 @@
 ## Popup and workspace
 
 The popup lists what rang since you last looked, newest first, with the time and
-inbox. The toolbar icon shows the same unseen count; opening the popup marks the
+inbox, one row per inbox with "rang N times" when it rang more than once. The toolbar icon shows the same unseen count; opening the popup marks the
 rings seen. A row click brings an open Intercom tab to the front and never
 navigates. After the list come the alert switches with a summary of the watched
 inboxes, and three buttons, **Signatures**, **Settings**, and **Tools**. Each button

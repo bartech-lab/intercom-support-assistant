@@ -56,7 +56,16 @@ function renderAlertHistory(history, status) {
   const count = document.getElementById('rangCount');
   const now = new Date();
   const entries = history.filter(entry => entry && Number.isFinite(entry.at)).slice().reverse().sort((a, b) => b.at - a.at);
-  const unseen = entries.filter(entry => !entry.seen);
+  const places = new Map();
+  const unseenEntries = entries.filter(entry => !entry.seen);
+  unseenEntries.forEach((entry) => {
+    const key = `${entry.label}|${entry.kind || ''}`;
+    const rings = Number(entry.rings) > 1 ? Number(entry.rings) : 1;
+    const place = places.get(key);
+    if (place) place.rings += rings;
+    else places.set(key, Object.assign({}, entry, { rings }));
+  });
+  const unseen = [...places.values()];
 
   list.textContent = '';
   unseen.slice(0, UNSEEN_SHOWN).forEach(entry => list.appendChild(alertRow(entry, now, status)));
@@ -66,7 +75,7 @@ function renderAlertHistory(history, status) {
     more.textContent = `and ${unseen.length - UNSEEN_SHOWN} more`;
     list.appendChild(more);
   }
-  count.textContent = unseen.length ? String(unseen.length) : '';
+  count.textContent = unseenEntries.length ? String(unseenEntries.length) : '';
   empty.hidden = unseen.length > 0;
 }
 
