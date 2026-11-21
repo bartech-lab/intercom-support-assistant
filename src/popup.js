@@ -26,6 +26,12 @@ function alertRow(entry, now, status) {
   const label = document.createElement('span');
   label.className = 'rang-label';
   label.textContent = entry.label || 'Intercom';
+  if (Number(entry.rings) > 1) {
+    const times = document.createElement('span');
+    times.className = 'rang-times';
+    times.textContent = ` rang ${entry.rings} times`;
+    label.appendChild(times);
+  }
   row.append(time, label);
   row.addEventListener('click', () => {
     status.textContent = '';

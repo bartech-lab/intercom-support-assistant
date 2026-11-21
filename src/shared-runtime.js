@@ -281,6 +281,100 @@ function isaShowAnchoredNotice(anchor, { title, body }) {
   return notice;
 }
 
+const ISA_ALERT_PACING_KEYS = {
+  repeat: 'isaAlertRepeat',
+  muteUntil: 'isaAlertMuteUntil',
+  quietEnabled: 'isaAlertQuietEnabled',
+  quietStart: 'isaAlertQuietStart',
+  quietEnd: 'isaAlertQuietEnd'
+};
+const ISA_ALERT_REPEAT_MS = 3 * 60 * 1000;
+const ISA_ALERT_REPEAT_MAX = 3;
+
+function isaClockMinutes(text) {
+  const match = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(String(text || ''));
+  return match ? Number(match[1]) * 60 + Number(match[2]) : null;
+}
+
+function isaInQuietHours(quietHours, date) {
+  if (!quietHours || quietHours.enabled !== true) return false;
+  const start = isaClockMinutes(quietHours.start);
+  const end = isaClockMinutes(quietHours.end);
+  if (start === null || end === null || start === end) return false;
+  const minute = date.getHours() * 60 + date.getMinutes();
+  return start < end ? minute >= start && minute < end : minute >= start || minute < end;
+}
+
+function isaAlertsMuted(pacing, now) {
+  return (Number(pacing.muteUntil) || 0) > now || isaInQuietHours(pacing.quietHours, new Date(now));
+}
+
+function createAlertPacing({ now, onRepeat }) {
+  const pacing = { repeat: false, muteUntil: 0, quietHours: { enabled: false, start: '', end: '' } };
+  const armed = new Map();
+
+  function apply(values) {
+    if (ISA_ALERT_PACING_KEYS.repeat in values) pacing.repeat = values[ISA_ALERT_PACING_KEYS.repeat] === true;
+    if (ISA_ALERT_PACING_KEYS.muteUntil in values) pacing.muteUntil = Number(values[ISA_ALERT_PACING_KEYS.muteUntil]) || 0;
+    if (ISA_ALERT_PACING_KEYS.quietEnabled in values) pacing.quietHours.enabled = values[ISA_ALERT_PACING_KEYS.quietEnabled] === true;
+    if (ISA_ALERT_PACING_KEYS.quietStart in values) pacing.quietHours.start = values[ISA_ALERT_PACING_KEYS.quietStart] || '';
+    if (ISA_ALERT_PACING_KEYS.quietEnd in values) pacing.quietHours.end = values[ISA_ALERT_PACING_KEYS.quietEnd] || '';
+  }
+
+  function connect(storage) {
+    if (!storage) return;
+    try {
+      storage.get({
+        [ISA_ALERT_PACING_KEYS.repeat]: false,
+        [ISA_ALERT_PACING_KEYS.muteUntil]: 0,
+        [ISA_ALERT_PACING_KEYS.quietEnabled]: false,
+        [ISA_ALERT_PACING_KEYS.quietStart]: '',
+        [ISA_ALERT_PACING_KEYS.quietEnd]: ''
+      }, values => apply(values || {}));
+      if (chrome.storage.onChanged && chrome.storage.onChanged.addListener) {
+        chrome.storage.onChanged.addListener((changes, areaName) => {
+          if (areaName !== 'local' || !changes) return;
+          const values = {};
+          Object.values(ISA_ALERT_PACING_KEYS).forEach((key) => {
+            if (changes[key]) values[key] = changes[key].newValue;
+          });
+          apply(values);
+        });
+      }
+    } catch (error) {}
+  }
+
+  function muted() {
+    return isaAlertsMuted(pacing, now());
+  }
+
+  function arm(key) {
+    if (!pacing.repeat) return;
+    armed.set(String(key), { lastAt: now(), repeats: 0 });
+  }
+
+  function settle(activeKeys) {
+    const active = new Set(activeKeys.map(String));
+    [...armed.keys()].forEach((key) => {
+      if (!active.has(key)) armed.delete(key);
+    });
+    if (!pacing.repeat) {
+      armed.clear();
+      return;
+    }
+    armed.forEach((ring, key) => {
+      if (now() - ring.lastAt < ISA_ALERT_REPEAT_MS) return;
+      ring.lastAt = now();
+      if (muted()) return;
+      ring.repeats += 1;
+      if (ring.repeats >= ISA_ALERT_REPEAT_MAX) armed.delete(key);
+      onRepeat(key, ring.repeats);
+    });
+  }
+
+  return { connect, muted, arm, settle };
+}
+
 function isaPrefersReducedMotion() {
   return typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }

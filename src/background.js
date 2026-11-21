@@ -161,6 +161,26 @@ function recordAlertHistory(entry) {
     .slice(-ALERT_HISTORY_LIMIT));
 }
 
+function recordAlertRepeat(entry, repeat) {
+  return updateAlertHistory((list) => {
+    let index = -1;
+    list.forEach((item, position) => {
+      if (item && item.label === entry.label) index = position;
+    });
+    if (index === -1) {
+      return list.concat(Object.assign({ at: Date.now(), seen: false }, entry)).slice(-ALERT_HISTORY_LIMIT);
+    }
+    return list.map((item, position) => (position === index
+      ? Object.assign({}, item, { rings: repeat + 1, count: entry.count, seen: false })
+      : item));
+  });
+}
+
+function alertRepeatOf(message) {
+  const repeat = message ? Number(message.repeat) : 0;
+  return Number.isInteger(repeat) && repeat > 0 && repeat <= 10 ? repeat : 0;
+}
+
 function markAlertHistorySeen() {
   return updateAlertHistory(list => (list.some(entry => entry && !entry.seen)
     ? list.map(entry => Object.assign({}, entry, { seen: true }))
@@ -199,7 +219,10 @@ function showInboxAlertNotification(message, sender) {
   const teamId = message && message.teamId ? String(message.teamId) : 'unknown';
   const label = (message && message.label) || 'Urgent inbox';
   const count = message && Number.isFinite(message.count) ? message.count : 0;
-  recordAlertHistory({ label, count, teamId });
+  const entry = { label, count, teamId };
+  if (alertRepeatOf(message)) recordAlertRepeat(entry, alertRepeatOf(message));
+  else recordAlertHistory(entry);
+  if (message && message.muted === true) return;
   showAlertNotification({
     idPrefix: `isa-inbox-${teamId}`,
     title: `New in ${label}`,

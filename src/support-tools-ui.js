@@ -16,13 +16,19 @@
     { key: 'isaAlertYourInbox', type: 'boolean' },
     { key: 'isaAlertDebug', type: 'boolean' },
     { key: 'isaDebug', type: 'boolean' },
-    { key: 'isaPauseAutomaticNoteCleanup', type: 'boolean' }
+    { key: 'isaPauseAutomaticNoteCleanup', type: 'boolean' },
+    { key: 'isaAlertRepeat', type: 'boolean' },
+    { key: 'isaAlertQuietEnabled', type: 'boolean' },
+    { key: 'isaAlertQuietStart', type: 'string' },
+    { key: 'isaAlertQuietEnd', type: 'string' }
   ];
 
   const DERIVED_KEYS = [
     'isaAlertRoster',
     'isaAlertLastSeen',
-    'isaAlertYourInboxAdmin'
+    'isaAlertYourInboxAdmin',
+    'isaAlertMuteUntil',
+    'isaAlertHistory'
   ];
 
   const DEBUG_FLAGS = [

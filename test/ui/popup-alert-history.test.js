@@ -274,3 +274,16 @@ test('the navigation buttons still open their workspace section', () => {
   ]);
   dom.window.close();
 });
+
+test('a row that rang more than once says how many times, and a single ring says nothing', () => {
+  const { doc, dom } = loadPopup({
+    history: [
+      entry(1, false, { label: 'Urgent Saltmarsh Crafts', rings: 1 }),
+      entry(2, false, { label: 'Urgent Northside', rings: 3 })
+    ]
+  });
+  const [repeated, single] = rows(doc);
+  assert.equal(repeated.querySelector('.rang-times').textContent.trim(), 'rang 3 times');
+  assert.equal(single.querySelector('.rang-times'), null);
+  dom.window.close();
+});

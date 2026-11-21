@@ -188,6 +188,22 @@
       margin-top: 6px; font-size: 11px; line-height: 1.5; color: var(--ink-muted, #6b7280);
     }
     .isa-alert-settings .isa-alert-test-status.isa-alert-test-bad { color: var(--accent, #2563eb); }
+    .isa-alert-pacing .isa-alert-pacing-row { font-weight: 400; }
+    .isa-alert-pacing .isa-alert-mute { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; min-height: 36px; }
+    .isa-alert-pacing .isa-alert-mute-label { font-size: 14px; font-weight: 700; color: var(--ink, #14181f); font-variant-numeric: tabular-nums; }
+    .isa-alert-pacing .isa-alert-mute-buttons { display: inline-flex; gap: 6px; }
+    .isa-alert-pacing .isa-alert-mute-buttons[hidden] { display: none; }
+    .isa-alert-pacing .isa-alert-mute-button {
+      min-height: 32px; padding: 4px 10px; border: 1px solid var(--hairline, #e2e6ec); border-radius: 8px;
+      background: var(--surface, #ffffff); color: var(--ink, #14181f); font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .isa-alert-pacing .isa-alert-mute-button:hover { border-color: var(--ink-muted, #5b6472); }
+    .isa-alert-pacing .isa-alert-quiet { display: flex; gap: 12px; align-items: center; margin: 4px 0 8px; font-size: 13px; color: var(--ink, #14181f); }
+    .isa-alert-pacing .isa-alert-quiet input {
+      width: 64px; min-height: 32px; padding: 4px 8px; border: 1px solid var(--hairline, #e2e6ec); border-radius: 8px;
+      background: var(--surface, #ffffff); color: var(--ink, #14181f); font-variant-numeric: tabular-nums;
+    }
+    .isa-alert-pacing .isa-alert-quiet input[aria-invalid="true"] { border-color: var(--block, #b91c1c); }
     .isa-alert-settings .isa-alert-storage-status {
       margin-top: 8px; color: var(--accent, #2563eb); font-size: 12px; line-height: 1.4;
     }
@@ -720,8 +736,167 @@
     }
   }
 
+
+  const PACING_KEYS = {
+    repeat: 'isaAlertRepeat',
+    muteUntil: 'isaAlertMuteUntil',
+    quietEnabled: 'isaAlertQuietEnabled',
+    quietStart: 'isaAlertQuietStart',
+    quietEnd: 'isaAlertQuietEnd'
+  };
+  const PACING_DEFAULTS = {
+    isaAlertRepeat: false,
+    isaAlertMuteUntil: 0,
+    isaAlertQuietEnabled: false,
+    isaAlertQuietStart: '22:00',
+    isaAlertQuietEnd: '07:00'
+  };
+  const MUTE_MINUTES = [15, 30, 60];
+  const CLOCK_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
+  const PACING_SAVE_FAILED = 'Could not save this setting. Try again.';
+
+  function clockLabel(at) {
+    const when = new Date(at);
+    return `${String(when.getHours()).padStart(2, '0')}:${String(when.getMinutes()).padStart(2, '0')}`;
+  }
+
+  function mountPacing(container) {
+    if (!container || container.getAttribute('data-isa-mounted') === 'true') return;
+    container.setAttribute('data-isa-mounted', 'true');
+    injectStyle();
+    container.classList.add('isa-alert-settings', 'isa-alert-pacing');
+    const compact = container.getAttribute('data-isa-compact') === 'true';
+    container.setAttribute('data-isa-mode', compact ? 'compact' : 'expanded');
+
+    const muteHtml = `<div class="isa-alert-mute" data-isa="mute">
+        <span class="isa-alert-mute-label" data-isa="muteLabel">Mute alerts for</span>
+        <span class="isa-alert-mute-buttons" data-isa="muteButtons">${MUTE_MINUTES.map(minutes =>
+          `<button type="button" class="isa-alert-mute-button" data-isa-mute="${minutes}">${minutes} min</button>`).join('')}</span>
+        <button type="button" class="isa-alert-mute-button" data-isa="unmute" hidden>Unmute</button>
+      </div>`;
+    const expandedHtml = compact ? '' : `<label class="isa-alert-toggle isa-alert-title">
+        <span>Repeat and quiet time</span>
+      </label>
+      <label class="isa-alert-toggle isa-alert-pacing-row">
+        <span>Ring again every 3 minutes until I look, up to 3 times</span>
+        <input type="checkbox" role="switch" data-isa="repeat">
+      </label>
+      <label class="isa-alert-toggle isa-alert-pacing-row">
+        <span>Quiet hours</span>
+        <input type="checkbox" role="switch" data-isa="quietEnabled">
+      </label>
+      <div class="isa-alert-quiet">
+        <label>From <input type="text" inputmode="numeric" maxlength="5" placeholder="22:00" data-isa="quietStart" aria-label="Quiet hours start, 24-hour clock"></label>
+        <label>to <input type="text" inputmode="numeric" maxlength="5" placeholder="07:00" data-isa="quietEnd" aria-label="Quiet hours end, 24-hour clock"></label>
+      </div>
+      <div class="isa-alert-hint">While alerts are muted or in quiet hours there is no sound and no pop-up. The tab still shows the mark, and the popup still lists what rang.</div>`;
+    container.innerHTML = `${expandedHtml}${muteHtml}
+      <div class="isa-alert-storage-status" data-isa="pacingStatus" role="status" aria-live="polite" hidden></div>`;
+
+    const state = Object.assign({}, PACING_DEFAULTS);
+    const statusEl = container.querySelector('[data-isa="pacingStatus"]');
+    const muteLabelEl = container.querySelector('[data-isa="muteLabel"]');
+    const muteButtonsEl = container.querySelector('[data-isa="muteButtons"]');
+    const unmuteEl = container.querySelector('[data-isa="unmute"]');
+    const repeatEl = container.querySelector('[data-isa="repeat"]');
+    const quietEnabledEl = container.querySelector('[data-isa="quietEnabled"]');
+    const quietStartEl = container.querySelector('[data-isa="quietStart"]');
+    const quietEndEl = container.querySelector('[data-isa="quietEnd"]');
+    let muteTimer = null;
+
+    function showStatus(text) {
+      statusEl.textContent = text;
+      statusEl.hidden = !text;
+    }
+
+    function render() {
+      const muted = Number(state.isaAlertMuteUntil) > Date.now();
+      muteLabelEl.textContent = muted ? `Muted until ${clockLabel(state.isaAlertMuteUntil)}` : 'Mute alerts for';
+      muteButtonsEl.hidden = muted;
+      unmuteEl.hidden = !muted;
+      if (muteTimer) clearTimeout(muteTimer);
+      muteTimer = muted ? setTimeout(render, Math.min(Number(state.isaAlertMuteUntil) - Date.now() + 500, 2 ** 31 - 1)) : null;
+      if (compact) return;
+      repeatEl.checked = state.isaAlertRepeat === true;
+      quietEnabledEl.checked = state.isaAlertQuietEnabled === true;
+      if (document.activeElement !== quietStartEl) quietStartEl.value = state.isaAlertQuietStart || '';
+      if (document.activeElement !== quietEndEl) quietEndEl.value = state.isaAlertQuietEnd || '';
+    }
+
+    function save(values) {
+      const storage = storageLocal();
+      const previous = Object.assign({}, state);
+      Object.assign(state, values);
+      showStatus('');
+      render();
+      const fail = () => {
+        Object.assign(state, previous);
+        showStatus(PACING_SAVE_FAILED);
+        render();
+      };
+      if (!storage) {
+        fail();
+        return;
+      }
+      try {
+        storage.set(values, () => {
+          if (chrome.runtime && chrome.runtime.lastError) fail();
+        });
+      } catch (error) {
+        fail();
+      }
+    }
+
+    container.querySelectorAll('[data-isa-mute]').forEach((button) => {
+      button.addEventListener('click', () => {
+        save({ [PACING_KEYS.muteUntil]: Date.now() + Number(button.getAttribute('data-isa-mute')) * 60000 });
+      });
+    });
+    unmuteEl.addEventListener('click', () => save({ [PACING_KEYS.muteUntil]: 0 }));
+
+    if (!compact) {
+      repeatEl.addEventListener('change', () => save({ [PACING_KEYS.repeat]: repeatEl.checked }));
+      quietEnabledEl.addEventListener('change', () => save({ [PACING_KEYS.quietEnabled]: quietEnabledEl.checked }));
+      [[quietStartEl, PACING_KEYS.quietStart], [quietEndEl, PACING_KEYS.quietEnd]].forEach(([input, key]) => {
+        input.addEventListener('change', () => {
+          const value = input.value.trim();
+          if (!CLOCK_PATTERN.test(value)) {
+            showStatus('Enter the time as HH:MM on a 24-hour clock, for example 22:00.');
+            input.setAttribute('aria-invalid', 'true');
+            return;
+          }
+          input.removeAttribute('aria-invalid');
+          save({ [key]: value });
+        });
+      });
+    }
+
+    const storage = storageLocal();
+    render();
+    if (!storage) return;
+    try {
+      storage.get(PACING_DEFAULTS, (stored) => {
+        if (!(chrome.runtime && chrome.runtime.lastError) && stored) Object.assign(state, stored);
+        render();
+      });
+      if (chrome.storage.onChanged && chrome.storage.onChanged.addListener) {
+        chrome.storage.onChanged.addListener((changes, areaName) => {
+          if (areaName !== 'local' || !changes) return;
+          let touched = false;
+          Object.values(PACING_KEYS).forEach((key) => {
+            if (!changes[key]) return;
+            state[key] = changes[key].newValue === undefined ? PACING_DEFAULTS[key] : changes[key].newValue;
+            touched = true;
+          });
+          if (touched) render();
+        });
+      }
+    } catch (error) {}
+  }
+
   function autoMount() {
     document.querySelectorAll('#isa-alert-settings').forEach(mount);
+    document.querySelectorAll('#isa-alert-pacing').forEach(mountPacing);
   }
 
   if (document.readyState === 'loading') {
@@ -730,5 +905,5 @@
     autoMount();
   }
 
-  window.ISA_ALERT_SETTINGS = { mount };
+  window.ISA_ALERT_SETTINGS = { mount, mountPacing };
 })();

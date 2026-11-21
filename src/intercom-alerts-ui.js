@@ -63,7 +63,7 @@ const alertVisuals = createAlertVisuals({
   titleMarker: ALERT_TITLE_MARKER,
   blinkMs: ALERT_BLINK_MS,
   runSafe: fn => safeExecute(fn, 'alertBlinkPulse'),
-  collectActive: () => collectActiveInboxes(),
+  collectActive: () => paceInboxAlerts(collectActiveInboxes()),
   summarize: activeList => ({
     text: activeList
       .map(item => `${alertShortLabel(alertRosterLabel(item.teamId))} (${item.count})`)
@@ -71,6 +71,19 @@ const alertVisuals = createAlertVisuals({
     total: activeList.reduce((sum, item) => sum + item.count, 0)
   })
 });
+
+const alertPacing = createAlertPacing({
+  now: () => alertClock(),
+  onRepeat: (teamId, repeat) => {
+    playAlertSoundOnce();
+    sendInboxAlertNotification(teamId, resolveAlertInboxCount(teamId) || 0, { repeat });
+  }
+});
+
+function paceInboxAlerts(activeList) {
+  alertPacing.settle(activeList.map(item => item.teamId));
+  return activeList;
+}
 
 function alertBlinkPulse() {
   alertVisuals.pulse();
@@ -92,6 +105,7 @@ function alertRuntimeAlive() {
 function initAlertSettingsSync() {
   const storage = alertStorageLocal();
   if (!storage) return;
+  alertPacing.connect(storage);
 
   storage.get(
     {
@@ -315,14 +329,15 @@ function playAlertSoundOnce() {
   } catch (error) {}
 }
 
-function sendInboxAlertNotification(teamId, count) {
+function sendInboxAlertNotification(teamId, count, extra = {}) {
   if (!alertRuntimeAlive()) return;
   try {
     chrome.runtime.sendMessage({
       type: 'inbox-alert',
       teamId,
       label: alertRosterLabel(teamId),
-      count
+      count,
+      ...extra
     });
   } catch (error) {}
 }
@@ -507,15 +522,17 @@ function evaluateInboxAlerts() {
   });
 
   if (risingInboxes.length) {
-    playAlertSoundOnce();
+    const muted = alertPacing.muted();
+    if (!muted) playAlertSoundOnce();
     risingInboxes.forEach(({ teamId, count }) => {
-      sendInboxAlertNotification(teamId, count);
+      sendInboxAlertNotification(teamId, count, muted ? { muted: true } : {});
+      alertPacing.arm(teamId);
     });
   }
 
   if (seenChanged) persistAlertLastSeen();
 
-  applyAttention(collectActiveInboxes());
+  applyAttention(paceInboxAlerts(collectActiveInboxes()));
 }
 
 function collectActiveInboxes() {

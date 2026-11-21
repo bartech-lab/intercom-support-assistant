@@ -23,7 +23,7 @@ test('popup opens each workspace section with a direct destination', () => {
     dom.window.document.querySelector(`[data-section="${section}"]`).click();
   }
   assert.deepEqual(messages, ['signatures', 'settings', 'tools'].map((section) => ({ type: 'open-preview', section })));
-  assert.equal(dom.window.document.querySelectorAll('[data-isa-compact="true"]').length, 1);
+  assert.equal(dom.window.document.querySelectorAll('[data-isa-compact="true"]').length, 2);
   assert.equal(dom.window.document.querySelector('[data-isa-collapsible]'), null);
   dom.window.close();
 });
