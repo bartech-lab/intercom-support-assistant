@@ -292,6 +292,9 @@ const ISA_ALERT_PACING_KEYS = {
 const ISA_ALERT_REPEAT_MAX_MINUTES = 60;
 const ISA_ALERT_REPEAT_DEFAULT_MINUTES = 3;
 const ISA_ALERT_REPEAT_MAX = 3;
+const ISA_ALERT_SEEN_CHANNEL = 'isa-alert-seen';
+const ISA_ALERT_SEEN_EVERY_MS = 10000;
+const ISA_ALERT_SEEN_HOLD_MS = 5000;
 
 function isaClockMinutes(text) {
   const match = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(String(text || ''));
@@ -319,6 +322,33 @@ function isaAlertsMuted(pacing, now) {
 function createAlertPacing({ now, onRepeat }) {
   const pacing = { repeat: false, repeatMs: isaAlertRepeatMs(), muteUntil: 0, quietHours: { enabled: false, start: '', end: '' } };
   const armed = new Map();
+  const seenElsewhere = new Map();
+  const seenSent = new Map();
+  let channel = null;
+  try {
+    if (typeof BroadcastChannel === 'function') {
+      channel = new BroadcastChannel(ISA_ALERT_SEEN_CHANNEL);
+      channel.onmessage = (event) => {
+        const key = event && event.data && typeof event.data.key === 'string' ? event.data.key : null;
+        if (!key) return;
+        seenElsewhere.set(key, now());
+        armed.delete(key);
+      };
+    }
+  } catch (error) {
+    channel = null;
+  }
+
+  function announceSeen(keys) {
+    if (!channel) return;
+    keys.map(String).forEach((key) => {
+      if (now() - (seenSent.get(key) || -Infinity) < ISA_ALERT_SEEN_EVERY_MS) return;
+      seenSent.set(key, now());
+      try {
+        channel.postMessage({ key });
+      } catch (error) {}
+    });
+  }
 
   function apply(values) {
     if (ISA_ALERT_PACING_KEYS.repeat in values) pacing.repeat = values[ISA_ALERT_PACING_KEYS.repeat] === true;
@@ -359,10 +389,12 @@ function createAlertPacing({ now, onRepeat }) {
 
   function arm(key) {
     if (!pacing.repeat) return;
+    if (now() - (seenElsewhere.get(String(key)) || -Infinity) < ISA_ALERT_SEEN_HOLD_MS) return;
     armed.set(String(key), { lastAt: now(), repeats: 0 });
   }
 
-  function settle(activeKeys) {
+  function settle(activeKeys, viewedKeys) {
+    announceSeen(viewedKeys || []);
     const active = new Set(activeKeys.map(String));
     [...armed.keys()].forEach((key) => {
       if (!active.has(key)) armed.delete(key);

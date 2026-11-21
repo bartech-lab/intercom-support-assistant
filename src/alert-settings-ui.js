@@ -198,6 +198,13 @@
     .isa-alert-pacing .isa-alert-mute-label { font-size: 14px; font-weight: 700; color: var(--ink, #14181f); font-variant-numeric: tabular-nums; }
     .isa-alert-pacing .isa-alert-mute-buttons { display: inline-flex; gap: 6px; }
     .isa-alert-pacing .isa-alert-mute-buttons[hidden] { display: none; }
+    .isa-alert-pacing .isa-alert-mute-custom { display: flex; align-items: center; justify-content: flex-end; gap: 8px; font-size: 13px; color: var(--ink, #14181f); }
+    .isa-alert-pacing .isa-alert-mute-custom[hidden] { display: none; }
+    .isa-alert-pacing .isa-alert-mute-custom input {
+      width: 56px; min-height: 32px; padding: 4px 8px; border: 1px solid var(--hairline, #e2e6ec); border-radius: 8px;
+      background: var(--surface, #ffffff); color: var(--ink, #14181f); font-variant-numeric: tabular-nums;
+    }
+    .isa-alert-pacing .isa-alert-mute-custom input[aria-invalid="true"] { border-color: var(--block, #b91c1c); }
     .isa-alert-pacing .isa-alert-mute-button {
       min-height: 32px; padding: 4px 10px; border: 1px solid var(--hairline, #e2e6ec); border-radius: 8px;
       background: var(--surface, #ffffff); color: var(--ink, #14181f); font-size: 12px; font-weight: 600; cursor: pointer;
@@ -801,8 +808,12 @@
     const muteHtml = `<div class="isa-alert-mute" data-isa="mute">
         <span class="isa-alert-mute-label" data-isa="muteLabel">Mute alerts for</span>
         <span class="isa-alert-mute-buttons" data-isa="muteButtons">${MUTE_MINUTES.map(minutes =>
-          `<button type="button" class="isa-alert-mute-button" data-isa-mute="${minutes}">${minutes} min</button>`).join('')}</span>
+          `<button type="button" class="isa-alert-mute-button" data-isa-mute="${minutes}">${minutes} min</button>`).join('')}<button type="button" class="isa-alert-mute-button" data-isa="muteCustomOpen" aria-expanded="false">Custom</button></span>
         <button type="button" class="isa-alert-mute-button" data-isa="unmute" hidden>Unmute</button>
+      </div>
+      <div class="isa-alert-mute-custom" data-isa="muteCustomRow" hidden>
+        <label><input type="text" inputmode="numeric" maxlength="3" data-isa="muteCustom" aria-label="Minutes to mute alerts, 1 to 720"> min</label>
+        <button type="button" class="isa-alert-mute-button" data-isa="muteCustomSet">Mute</button>
       </div>`;
     const expandedHtml = compact ? '' : `<label class="isa-alert-toggle isa-alert-title">
         <span>Repeat and quiet time</span>
@@ -833,6 +844,11 @@
     const muteLabelEl = container.querySelector('[data-isa="muteLabel"]');
     const muteButtonsEl = container.querySelector('[data-isa="muteButtons"]');
     const unmuteEl = container.querySelector('[data-isa="unmute"]');
+    const muteCustomOpenEl = container.querySelector('[data-isa="muteCustomOpen"]');
+    const muteCustomRowEl = container.querySelector('[data-isa="muteCustomRow"]');
+    const muteCustomEl = container.querySelector('[data-isa="muteCustom"]');
+    const muteCustomSetEl = container.querySelector('[data-isa="muteCustomSet"]');
+    let muteCustomOpen = false;
     const repeatEl = container.querySelector('[data-isa="repeat"]');
     const repeatMinutesEl = container.querySelector('[data-isa="repeatMinutes"]');
     const repeatCustomRowEl = container.querySelector('[data-isa="repeatCustomRow"]');
@@ -853,6 +869,9 @@
       muteLabelEl.textContent = muted ? `Muted until ${clockLabel(state.isaAlertMuteUntil)}` : 'Mute alerts for';
       muteButtonsEl.hidden = muted;
       unmuteEl.hidden = !muted;
+      if (muted) muteCustomOpen = false;
+      muteCustomRowEl.hidden = !muteCustomOpen;
+      muteCustomOpenEl.setAttribute('aria-expanded', muteCustomOpen ? 'true' : 'false');
       if (muteTimer) clearTimeout(muteTimer);
       muteTimer = muted ? setTimeout(render, Math.min(Number(state.isaAlertMuteUntil) - Date.now() + 500, 2 ** 31 - 1)) : null;
       if (compact) return;
@@ -899,6 +918,30 @@
       });
     });
     unmuteEl.addEventListener('click', () => save({ [PACING_KEYS.muteUntil]: 0 }));
+    muteCustomOpenEl.addEventListener('click', () => {
+      muteCustomOpen = !muteCustomOpen;
+      muteCustomEl.removeAttribute('aria-invalid');
+      showStatus('');
+      render();
+      if (muteCustomOpen) muteCustomEl.focus();
+    });
+    const muteCustom = () => {
+      const text = muteCustomEl.value.trim();
+      const minutes = /^\d{1,3}$/.test(text) ? Number(text) : 0;
+      if (minutes < 1 || minutes > 720) {
+        showStatus('Enter a whole number of minutes from 1 to 720.');
+        muteCustomEl.setAttribute('aria-invalid', 'true');
+        return;
+      }
+      muteCustomEl.removeAttribute('aria-invalid');
+      muteCustomEl.value = '';
+      muteCustomOpen = false;
+      save({ [PACING_KEYS.muteUntil]: Date.now() + minutes * 60000 });
+    };
+    muteCustomSetEl.addEventListener('click', muteCustom);
+    muteCustomEl.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') muteCustom();
+    });
 
     if (!compact) {
       repeatEl.addEventListener('change', () => save({ [PACING_KEYS.repeat]: repeatEl.checked }));

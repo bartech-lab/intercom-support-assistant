@@ -81,7 +81,9 @@ const alertPacing = createAlertPacing({
 });
 
 function paceInboxAlerts(activeList) {
-  alertPacing.settle(activeList.map(item => item.teamId));
+  const activeTeam = document.hidden ? null : getActiveInboxId();
+  const viewed = activeTeam && alertWatchedInboxIds().map(String).includes(String(activeTeam)) ? [String(activeTeam)] : [];
+  alertPacing.settle(activeList.map(item => item.teamId), viewed);
   return activeList;
 }
 
