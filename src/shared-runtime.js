@@ -17,7 +17,8 @@ const SOUND_BLOCKED_NOTICE_STYLE = {
   maxWidth: 'min(360px, calc(100vw - 32px))',
   boxSizing: 'border-box',
   padding: '8px 12px',
-  border: '1px solid #f59e0b',
+  borderWidth: '1px',
+  borderStyle: 'solid',
   borderRadius: '8px',
   boxShadow: '0 8px 24px rgba(15, 23, 42, 0.3)',
   fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
@@ -26,9 +27,6 @@ const SOUND_BLOCKED_NOTICE_STYLE = {
   textAlign: 'left',
   pointerEvents: 'none'
 };
-
-const SOUND_BLOCKED_NOTICE_DARK = { background: '#1f2937', color: '#ffffff' };
-const SOUND_BLOCKED_NOTICE_LIGHT = { background: '#ffffff', color: '#111827' };
 
 function pageBackgroundIsLight() {
   const corner = typeof document.elementFromPoint === 'function'
@@ -124,8 +122,9 @@ function showSoundBlockedNotice() {
   notice.setAttribute('data-isa-own', '');
   notice.setAttribute('role', 'status');
   notice.textContent = SOUND_BLOCKED_NOTICE_TEXT;
+  const tokens = pageBackgroundIsLight() ? ISA_TOKENS_LIGHT : ISA_TOKENS_DARK;
   Object.assign(notice.style, SOUND_BLOCKED_NOTICE_STYLE,
-    pageBackgroundIsLight() ? SOUND_BLOCKED_NOTICE_LIGHT : SOUND_BLOCKED_NOTICE_DARK);
+    { background: tokens.surface, color: tokens.ink, borderColor: tokens.warn });
 
   const dismiss = () => {
     document.removeEventListener('pointerdown', dismiss, true);

@@ -169,19 +169,19 @@ function noticeColours(win) {
 test('on a light page the notice is light with dark text', () => {
   const win = loadPlain();
   win.document.body.style.backgroundColor = 'rgb(255, 255, 255)';
-  assert.deepEqual(noticeColours(win), ['rgb(255, 255, 255)', 'rgb(17, 24, 39)']);
+  assert.deepEqual(noticeColours(win), ['rgb(255, 255, 255)', 'rgb(20, 24, 31)']);
 });
 
 test('on a dark page the notice is dark with light text', () => {
   const win = loadPlain();
   win.document.body.style.backgroundColor = 'rgb(22, 23, 28)';
-  assert.deepEqual(noticeColours(win), ['rgb(31, 41, 55)', 'rgb(255, 255, 255)']);
+  assert.deepEqual(noticeColours(win), ['rgb(23, 26, 32)', 'rgb(231, 234, 239)']);
 });
 
 test('a transparent body takes the theme from the page root background', () => {
   const win = loadPlain();
   win.document.documentElement.style.backgroundColor = 'rgb(250, 250, 250)';
-  assert.deepEqual(noticeColours(win), ['rgb(255, 255, 255)', 'rgb(17, 24, 39)']);
+  assert.deepEqual(noticeColours(win), ['rgb(255, 255, 255)', 'rgb(20, 24, 31)']);
 });
 
 test('the theme comes from what sits behind the notice corner, not from the body, when they differ', () => {
@@ -194,13 +194,13 @@ test('the theme comes from what sits behind the notice corner, not from the body
   win.document.querySelector('main').appendChild(panel);
   const asked = [];
   win.document.elementFromPoint = (x, y) => { asked.push([x, y]); return inner; };
-  assert.deepEqual(noticeColours(win), ['rgb(255, 255, 255)', 'rgb(17, 24, 39)']);
+  assert.deepEqual(noticeColours(win), ['rgb(255, 255, 255)', 'rgb(20, 24, 31)']);
   assert.deepEqual(asked, [[24, win.innerHeight - 24]]);
 });
 
 test('a page with no background colour at all gets the dark notice', () => {
   const win = loadPlain();
-  assert.deepEqual(noticeColours(win), ['rgb(31, 41, 55)', 'rgb(255, 255, 255)']);
+  assert.deepEqual(noticeColours(win), ['rgb(23, 26, 32)', 'rgb(231, 234, 239)']);
 });
 
 test('the notice stays until a gesture happens', () => {
