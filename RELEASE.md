@@ -30,7 +30,7 @@ npm run verify
 | 1. `npm test` | the whole suite |
 | 2. syntax | `node --check` on every JavaScript file in `src/`, `tools/`, `test/` |
 | 3. `git diff --check` | whitespace errors |
-| 4. `tools/release-check.js` | product name, description, and version agree across manifest, popup, README and changelog; signature config validates; the preview data is regenerated; no `DEBUG = true` constant is left in `src/` |
+| 4. `tools/release-check.js` | product name, description, and version agree across manifest, popup and changelog; signature config validates; the preview data is regenerated; no `DEBUG = true` constant is left in `src/` |
 | 5. `tools/build-release.js --zip` | builds `dist/` from `src/`, runs the artifact verifier, writes the ZIP |
 | 6. ZIP check | the ZIP exists and is not empty |
 

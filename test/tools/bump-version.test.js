@@ -63,7 +63,6 @@ function fixtureFiles(version = '2.0.18.9') {
   return {
     manifest: JSON.stringify({ manifest_version: 3, name: 'Intercom Support Assistant', version, permissions: ['storage'] }, null, 2) + '\n',
     popup: `<html><body><footer><span>v${version}</span></footer></body></html>\n`,
-    readme: `# Intercom Support Assistant\n\nCurrent version: **v${version}**. See the changelog.\n`,
     changelog: FIXTURE_CHANGELOG.replace('2.0.18.9', version)
   };
 }
@@ -73,7 +72,6 @@ function writeRoot(files) {
   fs.mkdirSync(path.join(root, 'src'));
   fs.writeFileSync(path.join(root, 'src', 'manifest.json'), files.manifest);
   fs.writeFileSync(path.join(root, 'src', 'popup.html'), files.popup);
-  fs.writeFileSync(path.join(root, 'README.md'), files.readme);
   fs.writeFileSync(path.join(root, 'CHANGELOG.md'), files.changelog);
   return root;
 }
@@ -82,7 +80,6 @@ function realFiles() {
   return {
     manifest: fs.readFileSync(path.join(REPO, 'src', 'manifest.json'), 'utf8'),
     popup: fs.readFileSync(path.join(REPO, 'src', 'popup.html'), 'utf8'),
-    readme: fs.readFileSync(path.join(REPO, 'README.md'), 'utf8'),
     changelog: fs.readFileSync(path.join(REPO, 'CHANGELOG.md'), 'utf8')
   };
 }
@@ -91,7 +88,6 @@ function readRoot(root) {
   return {
     manifest: fs.readFileSync(path.join(root, 'src', 'manifest.json')),
     popup: fs.readFileSync(path.join(root, 'src', 'popup.html')),
-    readme: fs.readFileSync(path.join(root, 'README.md')),
     changelog: fs.readFileSync(path.join(root, 'CHANGELOG.md'))
   };
 }
@@ -189,10 +185,6 @@ test('an applied patch bump on the real files updates all four and keeps everyth
   assert.ok(!updated.popup.includes(`v${current}`));
   assert.equal(updated.popup.split(`v${next}`).join(`v${current}`), original.popup);
 
-  assert.ok(updated.readme.includes(`**v${next}**`));
-  assert.ok(!updated.readme.includes(`**v${current}**`));
-  assert.equal(updated.readme.split(`**v${next}**`).join(`**v${current}**`), original.readme);
-
   const oldTop = `## [${current}]`;
   const oldIndex = original.changelog.indexOf(oldTop);
   const newOldIndex = updated.changelog.indexOf(oldTop);
@@ -214,7 +206,6 @@ test('the bumped files satisfy the release-check version patterns', () => {
   assert.equal(JSON.parse(updated.manifest).version, '2.0.18.10');
   assert.equal(updated.popup.match(new RegExp(`v${versionPattern}`))[1], '2.0.18.10');
   assert.equal(updated.changelog.match(new RegExp(`^## \\[${versionPattern}\\]`, 'm'))[1], '2.0.18.10');
-  assert.equal(updated.readme.match(new RegExp(`\\*\\*v${versionPattern}\\*\\*`))[1], '2.0.18.10');
 });
 
 test('an explicit version is applied as given', () => {
@@ -226,7 +217,6 @@ test('an explicit version is applied as given', () => {
   const updated = readRootText(root);
   assert.equal(JSON.parse(updated.manifest).version, '2.1.0.0');
   assert.ok(updated.popup.includes('v2.1.0.0'));
-  assert.ok(updated.readme.includes('**v2.1.0.0**'));
   assert.match(updated.changelog, /^## \[2\.1\.0\.0\] - 2026-09-26$/m);
 });
 
@@ -261,7 +251,6 @@ test('planBump is pure and returns the new file contents', () => {
   assert.equal(result.version, '2.0.18.10');
   assert.equal(JSON.parse(result.files.manifest).version, '2.0.18.10');
   assert.ok(result.files.popup.includes('v2.0.18.10'));
-  assert.ok(result.files.readme.includes('**v2.0.18.10**'));
   assert.equal(changelogSection(result.files.changelog, '2.0.18.10'), NOTES);
 });
 
@@ -344,18 +333,6 @@ test('a popup that shows the current version zero times is rejected and nothing 
 test('a popup that shows the current version twice is rejected and nothing is written', () => {
   const files = fixtureFiles('2.0.18.9');
   files.popup = '<html><body><h1>v2.0.18.9</h1><footer><span>v2.0.18.9</span></footer></body></html>\n';
-  expectRejected(files, ['patch', `--notes=${writeNotes(NOTES)}`]);
-});
-
-test('a README without the bold current version is rejected and nothing is written', () => {
-  const files = fixtureFiles('2.0.18.9');
-  files.readme = '# Intercom Support Assistant\n\nCurrent version: v2.0.18.9. See the changelog.\n';
-  expectRejected(files, ['patch', `--notes=${writeNotes(NOTES)}`]);
-});
-
-test('a README showing an older bold version is rejected and nothing is written', () => {
-  const files = fixtureFiles('2.0.18.9');
-  files.readme = '# Intercom Support Assistant\n\nCurrent version: **v2.0.18.8**. See the changelog.\n';
   expectRejected(files, ['patch', `--notes=${writeNotes(NOTES)}`]);
 });
 

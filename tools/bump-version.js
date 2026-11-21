@@ -7,7 +7,6 @@ const ROOT = path.join(__dirname, '..');
 const FILES = {
   manifest: path.join('src', 'manifest.json'),
   popup: path.join('src', 'popup.html'),
-  readme: 'README.md',
   changelog: 'CHANGELOG.md'
 };
 const VERSION_RE = /^\d+\.\d+\.\d+\.\d+$/;
@@ -53,7 +52,6 @@ function planBump(files, request, notes, date) {
 
   const popupCount = (files.popup.match(new RegExp(`v${current.replace(/\./g, '\\.')}\\b`, 'g')) || []).length;
   if (popupCount !== 1) errors.push(`src/popup.html should show v${current} exactly once, found ${popupCount}`);
-  if (!files.readme.includes(`**v${current}**`)) errors.push(`README.md does not show **v${current}**`);
   if (!/^## \[/m.test(files.changelog)) errors.push('CHANGELOG.md has no "## [" entry to insert above');
 
   if (errors.length) return { errors, current, version, files };
@@ -67,7 +65,6 @@ function planBump(files, request, notes, date) {
     files: {
       manifest: files.manifest.replace(`"version": "${current}"`, `"version": "${version}"`),
       popup: files.popup.replace(`v${current}`, `v${version}`),
-      readme: files.readme.replace(`**v${current}**`, `**v${version}**`),
       changelog: `${files.changelog.slice(0, firstEntry)}## [${version}] - ${date}\n\n${body}\n\n${files.changelog.slice(firstEntry)}`
     }
   };

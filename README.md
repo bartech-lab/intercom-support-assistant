@@ -4,7 +4,6 @@
 
 A Chrome extension that makes the Intercom inbox safer for a support team
 answering for the storefronts of one retail group in seven languages.
-Current version: **v1.0.0.0**.
 
 ![Opening an Italian and then a German message picks the matching signature automatically; one click switches the language](docs/screenshots/demo.gif)
 

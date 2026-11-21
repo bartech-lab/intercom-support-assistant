@@ -20,7 +20,7 @@ function copyFixture() {
   for (const entry of ['src', 'tools', 'docs']) {
     fs.cpSync(path.join(REPO, entry), path.join(dir, entry), { recursive: true });
   }
-  for (const file of ['README.md', 'CHANGELOG.md', 'package.json']) {
+  for (const file of ['CHANGELOG.md', 'package.json']) {
     fs.copyFileSync(path.join(REPO, file), path.join(dir, file));
   }
   return dir;
@@ -72,18 +72,6 @@ test('a popup that no longer shows the current version fails naming the popup', 
   assert.match(
     result.stdout + result.stderr,
     new RegExp(`popup version does not match manifest version ${escapeRegExp(version)}`)
-  );
-});
-
-test('a README showing an older bold version fails naming the README', () => {
-  const root = copyFixture();
-  const version = readManifestVersion(root);
-  replaceInFile(path.join(root, 'README.md'), `**v${version}**`, '**v9.9.9.9**');
-  const result = runReleaseCheck(root);
-  assert.notEqual(result.status, 0);
-  assert.match(
-    result.stdout + result.stderr,
-    new RegExp(`README current version does not match manifest version ${escapeRegExp(version)}`)
   );
 });
 

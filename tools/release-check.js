@@ -41,7 +41,6 @@ function main() {
   const manifest = JSON.parse(readSrc('manifest.json'));
   const popup = readSrc('popup.html');
   const changelog = read('CHANGELOG.md');
-  const readme = read('README.md');
   const version = manifest.version;
 
   if (manifest.name !== PRODUCT_NAME) {
@@ -55,7 +54,6 @@ function main() {
   const versionPattern = '(\\d+\\.\\d+\\.\\d+(?:\\.\\d+)?)';
   const popupVersion = popup.match(new RegExp(`v${versionPattern}`));
   const changelogVersion = changelog.match(new RegExp(`^## \\[${versionPattern}\\]`, 'm'));
-  const readmeVersion = readme.match(new RegExp(`\\*\\*v${versionPattern}\\*\\*`));
 
   if (!popupVersion || popupVersion[1] !== version) {
     fail(`popup version does not match manifest version ${version}`);
@@ -63,10 +61,6 @@ function main() {
 
   if (!changelogVersion || changelogVersion[1] !== version) {
     fail(`top CHANGELOG version does not match manifest version ${version}`);
-  }
-
-  if (!readmeVersion || readmeVersion[1] !== version) {
-    fail(`README current version does not match manifest version ${version}`);
   }
 
   ['signatures-data.js'].forEach((fileName) => {
