@@ -1,6 +1,6 @@
 const ALERT_HISTORY_KEY = 'isaAlertHistory';
 const NO_TAB = 'No Intercom tab is open.';
-const EARLIER_SHOWN = 5;
+const UNSEEN_SHOWN = 3;
 const OPEN_FAILED = 'Could not open the workspace. Try again.';
 
 function twoDigits(value) {
@@ -55,18 +55,16 @@ function renderAlertHistory(history, status) {
   const empty = document.getElementById('rangEmpty');
   const count = document.getElementById('rangCount');
   const now = new Date();
-  const entries = history.filter(entry => entry && Number.isFinite(entry.at)).slice().reverse();
+  const entries = history.filter(entry => entry && Number.isFinite(entry.at)).slice().reverse().sort((a, b) => b.at - a.at);
   const unseen = entries.filter(entry => !entry.seen);
-  const seen = entries.filter(entry => entry.seen);
 
   list.textContent = '';
-  unseen.forEach(entry => list.appendChild(alertRow(entry, now, status)));
-  if (seen.length) {
-    const heading = document.createElement('li');
-    heading.className = 'rang-earlier';
-    heading.textContent = 'Earlier';
-    list.appendChild(heading);
-    seen.slice(0, EARLIER_SHOWN).forEach(entry => list.appendChild(alertRow(entry, now, status)));
+  unseen.slice(0, UNSEEN_SHOWN).forEach(entry => list.appendChild(alertRow(entry, now, status)));
+  if (unseen.length > UNSEEN_SHOWN) {
+    const more = document.createElement('li');
+    more.className = 'rang-more';
+    more.textContent = `and ${unseen.length - UNSEEN_SHOWN} more`;
+    list.appendChild(more);
   }
   count.textContent = unseen.length ? String(unseen.length) : '';
   empty.hidden = unseen.length > 0;

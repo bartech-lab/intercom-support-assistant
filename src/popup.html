@@ -7,18 +7,17 @@
   <script src="theme.js"></script>
   <link rel="stylesheet" href="workspace-theme.css">
   <style>
-    body { width: 360px; max-height: 600px; box-sizing: border-box; margin: 0; padding: 12px; display: flex; flex-direction: column; background: var(--bg); color: var(--ink); }
-    body > * { flex: 0 0 auto; }
+    body { width: 360px; margin: 0; padding: 12px; background: var(--bg); color: var(--ink); }
     .app-header { padding: 10px 12px; gap: 8px; }
     .app-header img { width: 40px; height: 28px; }
     .app-header h1 { font-size: 14px; }
-    .rang { flex: 0 1 auto; min-height: 76px; display: flex; flex-direction: column; margin: 12px 0; background: var(--surface); border: 1px solid var(--hairline); border-radius: 8px; overflow: hidden; }
+    .rang { margin: 12px 0; background: var(--surface); border: 1px solid var(--hairline); border-radius: 8px; overflow: hidden; }
     .rang-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 10px 12px 6px; }
     .rang-head h2 { font-size: 14px; font-weight: 600; margin: 0; }
     .rang-count { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--block); }
     .rang-count:empty { display: none; }
-    .rang-list { list-style: none; margin: 0; padding: 0; flex: 0 1 auto; min-height: 0; max-height: 264px; overflow-y: auto; }
-    .rang-earlier { padding: 8px 12px 2px; font-size: 12px; color: var(--ink-muted); }
+    .rang-list { list-style: none; margin: 0; padding: 0; }
+    .rang-more { padding: 6px 12px 8px; border-top: 1px solid var(--hairline); font-size: 12px; color: var(--ink-muted); }
     .rang-row { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 10px; width: 100%; min-height: 36px; padding: 6px 12px 6px 9px; border: 0; border-left: 3px solid transparent; border-top: 1px solid var(--hairline); background: transparent; color: var(--ink); text-align: left; cursor: pointer; }
     .rang-row:hover { background: var(--surface-2); }
     .rang-row:focus-visible { outline-offset: -2px; }
