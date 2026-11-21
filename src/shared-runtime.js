@@ -396,8 +396,9 @@ function createAlertPacing({ now, onRepeat }) {
   function settle(activeKeys, viewedKeys) {
     announceSeen(viewedKeys || []);
     const active = new Set(activeKeys.map(String));
+    const viewed = new Set((viewedKeys || []).map(String));
     [...armed.keys()].forEach((key) => {
-      if (!active.has(key)) armed.delete(key);
+      if (viewed.has(key) || !active.has(key)) armed.delete(key);
     });
     if (!pacing.repeat) {
       armed.clear();

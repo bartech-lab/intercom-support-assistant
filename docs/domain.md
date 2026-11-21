@@ -103,7 +103,7 @@ Source: `src/intercom-alerts-ui.js`, `src/alert-sounds.js`, `src/alert-settings-
 
 Each `inbox-alert` message is appended to `isaAlertHistory` in `chrome.storage.local` (newest 50), before the desktop-notification guard, so a ring with pop-ups turned off is still listed. An entry holds the inbox label, the count and the team id, never a tab id or customer data. Opening the popup marks all seen, and the toolbar icon shows the unseen count. A row click only brings an open Intercom tab to the front; it never navigates. The compact alert summary in the popup ends with a Change button that opens the workspace Settings section. The history is not in the settings export.
 
-Repeat until seen, the mute timer and quiet hours (`mountPacing` in `src/alert-settings-ui.js`, `#isa-alert-pacing`) use the global keys `isaAlertRepeat`, `isaAlertRepeatMinutes`, `isaAlertMuteUntil`, `isaAlertQuietEnabled`, `isaAlertQuietStart`, `isaAlertQuietEnd`. A ring arms its team id; each pass hands the pacing the inboxes still unseen, and an inbox missing once is acknowledged for good, so only a new rise re-arms it. Repeats come `isaAlertRepeatMinutes` apart (a whole number from 1 to 60; anything else counts as 3; the page offers 1, 2, 3, 5, 10 and a Custom field), 3 at most, on the existing blink timer. While muted or in quiet hours a ring makes no sound and no pop-up, but is sent with `muted: true` and listed; a repeat due while muted is dropped without using one up. A repeat is sent with `repeat: n` and updates the existing history row (`rings`) instead of adding one. Tabs tell each other what the agent is looking at over `BroadcastChannel('isa-alert-seen')`: `settle(activeKeys, viewedKeys)` announces each viewed key at most every 10 s, a tab that hears a key drops its armed ring, and a ring armed within 5 s after hearing it is not armed. The mute row has a Custom field, 1 to 720 minutes. In the popup the empty line sits above the Earlier list.
+Repeat until seen, the mute timer and quiet hours (`mountPacing` in `src/alert-settings-ui.js`, `#isa-alert-pacing`) use the global keys `isaAlertRepeat`, `isaAlertRepeatMinutes`, `isaAlertMuteUntil`, `isaAlertQuietEnabled`, `isaAlertQuietStart`, `isaAlertQuietEnd`. A ring arms its team id; each pass hands the pacing the inboxes still unseen, and an inbox missing once is acknowledged for good, so only a new rise re-arms it. Repeats come `isaAlertRepeatMinutes` apart (a whole number from 1 to 60; anything else counts as 3; the page offers 1, 2, 3, 5, 10 and a Custom field), 3 at most, on the existing blink timer. While muted or in quiet hours a ring makes no sound and no pop-up, but is sent with `muted: true` and listed; a repeat due while muted is dropped without using one up. A repeat is sent with `repeat: n` and updates the existing history row (`rings`) instead of adding one. Tabs tell each other what the agent is looking at over `BroadcastChannel('isa-alert-seen')`: `settle(activeKeys, viewedKeys)` announces each viewed key at most every 10 s, a tab that hears a key drops its armed ring, and a ring armed within 5 s after hearing it is not armed. A repeat also stops when the agent opens a conversation of that team inbox through All or search (the team comes from the network-relayed conversation data), unless that conversation was already open when the ring happened. The mute row has a Custom field, 1 to 720 minutes. In the popup the empty line sits above the Earlier list, which shows the last 5 seen rings, and the popup body stays within 600 px with the list scrolling in its own box.
 
 Tests:
 
@@ -126,6 +126,8 @@ Tests:
 - `test/ui/alert-pacing-settings.test.js`
 - `test/ui/alert-mute-custom.test.js`
 - `test/ui/alert-pacing-cross-tab.test.js`
+- `test/ui/alert-pacing-viewed-active.test.js`
+- `test/intercom/inbox-alert-looked-via-chat.test.js`
 - `test/ui/alert-pacing.test.js`
 - `test/ui/alert-repeat-interval.test.js`
 - `test/ui/alert-summary-change-link.test.js`
@@ -137,6 +139,7 @@ Tests:
 - `test/ui/alert-settings-ui.test.js`
 - `test/ui/popup-alert-history.test.js`
 - `test/ui/popup-empty-order.test.js`
+- `test/ui/popup-earlier-cap.test.js`
 
 ## Self-deleting notes
 

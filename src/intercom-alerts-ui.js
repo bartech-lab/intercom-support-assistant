@@ -80,9 +80,23 @@ const alertPacing = createAlertPacing({
   }
 });
 
+const alertOpenChatAtRing = {};
+
+function alertOpenChatTeam() {
+  if (document.hidden || typeof networkTeamByConversation === 'undefined') return null;
+  const conversationId = getConversationId();
+  const teamId = conversationId ? networkTeamByConversation.get(conversationId) : null;
+  return teamId ? { conversationId, teamId: String(teamId) } : null;
+}
+
 function paceInboxAlerts(activeList) {
+  const watched = alertWatchedInboxIds().map(String);
   const activeTeam = document.hidden ? null : getActiveInboxId();
-  const viewed = activeTeam && alertWatchedInboxIds().map(String).includes(String(activeTeam)) ? [String(activeTeam)] : [];
+  const viewed = activeTeam && watched.includes(String(activeTeam)) ? [String(activeTeam)] : [];
+  const openChat = alertOpenChatTeam();
+  if (openChat && watched.includes(openChat.teamId) && alertOpenChatAtRing[openChat.teamId] !== openChat.conversationId) {
+    viewed.push(openChat.teamId);
+  }
   alertPacing.settle(activeList.map(item => item.teamId), viewed);
   return activeList;
 }
@@ -528,6 +542,7 @@ function evaluateInboxAlerts() {
     if (!muted) playAlertSoundOnce();
     risingInboxes.forEach(({ teamId, count }) => {
       sendInboxAlertNotification(teamId, count, muted ? { muted: true } : {});
+      alertOpenChatAtRing[teamId] = getConversationId() || null;
       alertPacing.arm(teamId);
     });
   }

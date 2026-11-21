@@ -1,5 +1,6 @@
 const ALERT_HISTORY_KEY = 'isaAlertHistory';
 const NO_TAB = 'No Intercom tab is open.';
+const EARLIER_SHOWN = 5;
 const OPEN_FAILED = 'Could not open the workspace. Try again.';
 
 function twoDigits(value) {
@@ -65,7 +66,7 @@ function renderAlertHistory(history, status) {
     heading.className = 'rang-earlier';
     heading.textContent = 'Earlier';
     list.appendChild(heading);
-    seen.forEach(entry => list.appendChild(alertRow(entry, now, status)));
+    seen.slice(0, EARLIER_SHOWN).forEach(entry => list.appendChild(alertRow(entry, now, status)));
   }
   count.textContent = unseen.length ? String(unseen.length) : '';
   empty.hidden = unseen.length > 0;

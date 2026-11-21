@@ -215,7 +215,7 @@ test('without BroadcastChannel pacing still repeats and settle with viewed keys 
   const b = tab(clock);
   b.pacing.arm('K');
   clock.now += MIN;
-  assert.doesNotThrow(() => b.pacing.settle(['K'], ['K']));
+  assert.doesNotThrow(() => b.pacing.settle(['K'], ['X']));
   assert.deepEqual(b.calls.map(c => c[0]), ['K']);
 });
 
@@ -226,7 +226,7 @@ test('a BroadcastChannel constructor that throws leaves pacing working', () => {
   assert.doesNotThrow(() => { b = tab(clock, { channel: throwingChannel }); });
   b.pacing.arm('K');
   clock.now += MIN;
-  assert.doesNotThrow(() => b.pacing.settle(['K'], ['K']));
+  assert.doesNotThrow(() => b.pacing.settle(['K'], ['X']));
   assert.deepEqual(b.calls.map(c => c[0]), ['K']);
 });
 

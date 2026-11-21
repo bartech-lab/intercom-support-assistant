@@ -99,7 +99,7 @@
     .isa-alert-summary strong { color: var(--ink, #14181f); }
     .isa-alert-summary summary { cursor: pointer; min-height: 24px; }
     .isa-alert-summary .isa-alert-change {
-      min-height: 24px; padding: 0; border: 0; background: none; cursor: pointer;
+      float: right; min-height: 24px; margin-left: 8px; padding: 0; border: 0; background: none; cursor: pointer;
       font: inherit; font-weight: 700; color: var(--link, var(--accent, #1d4ed8)); text-decoration: underline;
     }
     .isa-alert-summary .isa-alert-change:focus-visible { outline: 2px solid var(--accent, #1d4ed8); outline-offset: 2px; }
@@ -198,6 +198,10 @@
     .isa-alert-pacing .isa-alert-mute-label { font-size: 14px; font-weight: 700; color: var(--ink, #14181f); font-variant-numeric: tabular-nums; }
     .isa-alert-pacing .isa-alert-mute-buttons { display: inline-flex; gap: 6px; }
     .isa-alert-pacing .isa-alert-mute-buttons[hidden] { display: none; }
+    .isa-alert-pacing[data-isa-mode="compact"] .isa-alert-mute { flex-wrap: nowrap; gap: 6px; }
+    .isa-alert-pacing[data-isa-mode="compact"] .isa-alert-mute-label { font-size: 13px; white-space: nowrap; }
+    .isa-alert-pacing[data-isa-mode="compact"] .isa-alert-mute-buttons { gap: 4px; }
+    .isa-alert-pacing[data-isa-mode="compact"] .isa-alert-mute-button { padding: 4px 6px; white-space: nowrap; }
     .isa-alert-pacing .isa-alert-mute-custom { display: flex; align-items: center; justify-content: flex-end; gap: 8px; font-size: 13px; color: var(--ink, #14181f); }
     .isa-alert-pacing .isa-alert-mute-custom[hidden] { display: none; }
     .isa-alert-pacing .isa-alert-mute-custom input {
@@ -531,7 +535,7 @@
           failed();
         }
       });
-      summary.appendChild(heading);
+      summary.append(change, heading);
       if (off.length) {
         const details = document.createElement('details');
         details.open = wasOpen;
@@ -543,7 +547,6 @@
         details.append(title, list);
         summary.appendChild(details);
       }
-      summary.appendChild(change);
     }
 
     function applyEnabledUi() {
