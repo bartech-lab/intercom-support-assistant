@@ -37,7 +37,7 @@ function duplicateStyleForCustomer(customerKey) {
   const index = duplicateStyleByCustomer.get(customerKey);
   return {
     index,
-    hueSlot: index % DUPLICATE_HUES.length,
+    huePosition: index % DUPLICATE_HUES.length,
     dashed: index >= DUPLICATE_HUES.length
   };
 }
@@ -186,24 +186,31 @@ function forgetDuplicateConversation(conversationId) {
   duplicateStripMemo.members = duplicateStripMemo.members.filter(id => id !== conversationId);
 }
 
-function duplicateHueClass(slot) {
-  return `isa-dup-c${slot + 1}`;
+function duplicateHueClass(position) {
+  return `isa-dup-c${position + 1}`;
 }
 
-function duplicateHueVariables(mode) {
-  return DUPLICATE_HUES.map((hue, slot) => `
-    .${duplicateHueClass(slot)} {
-      --isa-dup-hue: ${mode === 'dark' ? hue.dark : hue.light};
-      --isa-dup-ink: ${mode === 'dark' ? hue.darkInk : hue.lightInk};
+function duplicateHueTokens(mode) {
+  return DUPLICATE_HUES.map((hue, position) => `
+      --isa-dup-${position + 1}: ${mode === 'dark' ? hue.dark : hue.light};
+      --isa-dup-${position + 1}-ink: ${mode === 'dark' ? hue.darkInk : hue.lightInk};`).join('');
+}
+
+function duplicateHueClasses() {
+  return DUPLICATE_HUES.map((hue, position) => `
+    .${duplicateHueClass(position)} {
+      --isa-dup-hue: var(--isa-dup-${position + 1});
+      --isa-dup-ink: var(--isa-dup-${position + 1}-ink);
     }`).join('');
 }
 
 const DUPLICATE_CUSTOMER_CSS = `${ROW_CHIP_TRAY_CSS}
-    ${duplicateHueVariables('light')}
-
-    @media (prefers-color-scheme: dark) {
-      ${duplicateHueVariables('dark')}
+    :root {${duplicateHueTokens('light')}
     }
+
+    :root[data-isa-theme="dark"] {${duplicateHueTokens('dark')}
+    }
+    ${duplicateHueClasses()}
 
     .${DUPLICATE_ROW_CLASS} {
       position: relative !important;
@@ -278,6 +285,18 @@ const DUPLICATE_CUSTOMER_CSS = `${ROW_CHIP_TRAY_CSS}
       color: var(--isa-dup-hue);
       text-decoration: none;
       white-space: nowrap;
+      position: relative;
+    }
+
+    .${DUPLICATE_STRIP_CLASS} a::after {
+      content: '';
+      position: absolute;
+      inset: -3px 0;
+    }
+
+    .${DUPLICATE_STRIP_CLASS} a:focus-visible {
+      outline: 2px solid var(--isa-accent);
+      outline-offset: 2px;
     }
 
     .${DUPLICATE_STRIP_CLASS} a[aria-current="true"] {
@@ -293,7 +312,7 @@ function injectDuplicateCustomerStyle() {
 
 function clearDuplicateRow(row) {
   row.classList.remove(DUPLICATE_ROW_CLASS, DUPLICATE_DASHED_CLASS);
-  DUPLICATE_HUES.forEach((_, slot) => row.classList.remove(duplicateHueClass(slot)));
+  DUPLICATE_HUES.forEach((_, position) => row.classList.remove(duplicateHueClass(position)));
   row.removeAttribute(DUPLICATE_GROUP_ATTRIBUTE);
   row.querySelectorAll(`.${DUPLICATE_CHIP_CLASS}`).forEach(chip => chip.remove());
   pruneRowChipTray(row);
@@ -304,7 +323,7 @@ function decorateDuplicateRow(row, customerKey, groupSize) {
   const marker = `${customerKey}::${groupSize}::${style.index}`;
 
   const applyClasses = () => {
-    const hueClass = duplicateHueClass(style.hueSlot);
+    const hueClass = duplicateHueClass(style.huePosition);
     if (!row.classList.contains(DUPLICATE_ROW_CLASS)) row.classList.add(DUPLICATE_ROW_CLASS);
     if (!row.classList.contains(hueClass)) row.classList.add(hueClass);
     if (row.classList.contains(DUPLICATE_DASHED_CLASS) !== style.dashed) {
@@ -449,7 +468,7 @@ function refreshDuplicateCustomerStrip(duplicateConversationIds) {
 
   const strip = createOwnElement('div');
   const style = duplicateStyleForCustomer(customerKey);
-  strip.className = `${DUPLICATE_STRIP_CLASS} ${duplicateHueClass(style.hueSlot)}`;
+  strip.className = `${DUPLICATE_STRIP_CLASS} ${duplicateHueClass(style.huePosition)}`;
   strip.setAttribute(DUPLICATE_GROUP_ATTRIBUTE, marker);
 
   strip.title = `${members.length} open conversations from this customer in this inbox`;

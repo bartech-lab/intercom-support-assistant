@@ -9,6 +9,7 @@ const { JSDOM } = require("jsdom");
 const { unrefWindowTimers } = require("../support/helpers");
 
 const SOURCE = fs.readFileSync(path.join(__dirname, "..", "..", "src", "intercom-attachments.js"), "utf8");
+const SHARED_RUNTIME_SOURCE = fs.readFileSync(path.join(__dirname, "..", "..", "src", "shared-runtime.js"), "utf8");
 const HIGHLIGHT = "isa-attachment-message-highlight";
 
 function loadAttachments() {
@@ -18,6 +19,7 @@ function loadAttachments() {
     pretendToBeVisual: true
   });
   unrefWindowTimers(dom.window);
+  vm.runInContext(SHARED_RUNTIME_SOURCE, dom.getInternalVMContext(), { filename: "shared-runtime.js" });
   vm.runInContext(SOURCE, dom.getInternalVMContext(), { filename: "intercom-attachments.js" });
   return dom.window;
 }

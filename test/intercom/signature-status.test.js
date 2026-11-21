@@ -463,3 +463,22 @@ test('brand-unclear never calls console.warn', () => {
     []
   );
 });
+
+test('the open status box follows the page theme through the shared tokens, with no dark class of its own', async () => {
+  for (const dark of [false, true]) {
+    const { win, holder } = showUnclear();
+    if (dark) win.document.documentElement.classList.add('dark');
+    await new Promise(resolve => setTimeout(resolve, 0));
+    click(win, chipOf(holder));
+    const [box] = boxes(win);
+    assert.ok(box, 'the box opens');
+    assert.equal(box.className, 'isa-signature-status-box');
+    const css = win.document.getElementById('isa-signature-status-style').textContent;
+    assert.equal(css.includes('-box-dark'), false);
+    assert.equal(/#[0-9a-fA-F]{3,6}\b|rgba?\(/.test(css.replace(/rgba\(\s*0,\s*0,\s*0/g, '')), false);
+    assert.match(css, /background: var\(--isa-surface\)/);
+    assert.match(css, /background: var\(--isa-warn\);\s*color: var\(--isa-warn-ink\)/);
+    assert.ok(win.document.getElementById('isa-tokens-style'));
+    assert.equal(win.document.documentElement.getAttribute('data-isa-theme'), dark ? 'dark' : 'light');
+  }
+});

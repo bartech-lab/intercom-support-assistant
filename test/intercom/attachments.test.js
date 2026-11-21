@@ -9,6 +9,7 @@ const { JSDOM } = require('jsdom');
 const { unrefWindowTimers } = require('../support/helpers');
 
 const SOURCE = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'intercom-attachments.js'), 'utf8');
+const SHARED_RUNTIME_SOURCE = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'shared-runtime.js'), 'utf8');
 
 function loadAttachments(html = '<!doctype html><html><head></head><body></body></html>') {
   const dom = new JSDOM(html, {
@@ -17,6 +18,7 @@ function loadAttachments(html = '<!doctype html><html><head></head><body></body>
     pretendToBeVisual: true
   });
   unrefWindowTimers(dom.window);
+  vm.runInContext(SHARED_RUNTIME_SOURCE, dom.getInternalVMContext(), { filename: 'shared-runtime.js' });
   vm.runInContext(SOURCE, dom.getInternalVMContext(), { filename: 'intercom-attachments.js' });
   return dom.window;
 }
@@ -399,13 +401,17 @@ test('destroy removes the button, the panel, and its listeners', () => {
   assert.equal(win.document.querySelector('.isa-attachments-button'), null);
 });
 
-test('the panel style ships a dark scheme through prefers-color-scheme only', () => {
+test('the panel takes its colours from the shared tokens and never from the system colour scheme', () => {
   const win = loadAttachments();
   makePanel(win, [makeRecord(win, { filename: 'one.pdf' })]);
 
   const css = win.document.getElementById('isa-attachment-panel-style').textContent;
-  assert.match(css, /@media \(prefers-color-scheme: dark\)/);
-  assert.equal(/data-theme/.test(css), false);
+  assert.equal(css.includes('prefers-color-scheme'), false);
+  assert.match(css, /background: var\(--isa-surface\)/);
+  assert.match(css, /color: var\(--isa-ink\)/);
+  assert.equal(/#[0-9a-fA-F]{3,6}\b/.test(css), false);
+  assert.ok(win.document.getElementById('isa-tokens-style'), 'the token block is installed with the panel');
+  assert.equal(win.document.documentElement.getAttribute('data-isa-theme'), 'light');
 });
 
 test('every row carries a download link that names the file', () => {

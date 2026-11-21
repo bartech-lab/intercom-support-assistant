@@ -131,7 +131,7 @@ test('injects the multi-recipient style into document and Intercom shadow root',
     assert.match(style, /\.isa-multi-recipient-email-highlight::before/);
     assert.match(style, /position:\s*relative/);
     assert.match(style, /position:\s*absolute/);
-    assert.match(style, /border:\s*2px solid #eab308/);
+    assert.match(style, /border:\s*2px solid var\(--isa-warn\)/);
     assert.match(style, /left:\s*-16px/);
     assert.match(style, /right:\s*-16px/);
     assert.match(style, /pointer-events:\s*none/);

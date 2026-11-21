@@ -369,7 +369,7 @@
 
     const saveFromTab = async (tab, button, status) => {
       button.disabled = true;
-      button.textContent = 'Saving...';
+      button.textContent = 'Saving…';
       status.className = 'isa-st-rowstatus';
       status.textContent = '';
 
@@ -448,7 +448,7 @@
 
     check.addEventListener('click', async () => {
       check.disabled = true;
-      check.textContent = 'Checking...';
+      check.textContent = 'Checking…';
       result.textContent = '';
 
       const response = await sendBackgroundMessage({ type: 'support-health' });
@@ -486,7 +486,7 @@
 
     exportButton.addEventListener('click', async () => {
       exportButton.disabled = true;
-      exportButton.textContent = 'Exporting...';
+      exportButton.textContent = 'Exporting…';
       result.textContent = '';
 
       const stored = await areaGet('local', null);

@@ -221,7 +221,7 @@ const failingGet = ui => (query, callback) => {
   ui.runtime.lastError = null;
 };
 
-test("export disables the button as Exporting... while reading and restores it after", async () => {
+test("export disables the button as Exporting… while reading and restores it after", async () => {
   const ui = await loadUi({ expanded: "true" });
   const button = ui.pick("isa-settings-backup", "export");
   assert.equal(button.textContent, "Export settings");
@@ -231,7 +231,7 @@ test("export disables the button as Exporting... while reading and restores it a
 
   ui.click(button);
   assert.equal(button.disabled, true);
-  assert.equal(button.textContent, "Exporting...");
+  assert.equal(button.textContent, "Exporting…");
   assert.equal(ui.saved.length, 0);
 
   pending.forEach(run => run());

@@ -7,7 +7,7 @@ let temporaryNoteOpenMenuState = null;
 let temporaryNoteSelectSeq = 0;
 
 const TEMPORARY_NOTE_MENU_GAP = 2;
-const TEMPORARY_NOTE_INVALID_COLOR = 'rgb(214, 84, 84)';
+const TEMPORARY_NOTE_INVALID_COLOR = 'var(--isa-block)';
 const TEMPORARY_NOTE_FOOTER_OWNER_ATTRIBUTE = 'data-isa-note-footer-owner';
 const TEMPORARY_NOTE_CHIP_CLASS = 'isa-temporary-note-chip';
 const TEMPORARY_NOTE_CHIP_STYLE = 'display:block;margin-top:2px;font-size:11px;opacity:0.7;';

@@ -131,3 +131,28 @@ test('the injected tokens and the extension page stylesheet hold the same values
     assert.equal(dark[name], pageDark[name], `dark ${name}`);
   }
 });
+
+function alertTitles(reducedMotion) {
+  const { win, run } = load('<!doctype html><html><head><title>Inbox</title></head><body></body></html>', INTERCOM_URL);
+  win.matchMedia = query => ({ matches: reducedMotion && query === '(prefers-reduced-motion: reduce)' });
+  run(`var visuals = createAlertVisuals({
+    titleMarker: '! ',
+    blinkMs: 100000,
+    runSafe: fn => fn(),
+    collectActive: () => [1],
+    summarize: () => ({ text: 'New chat', total: 1 })
+  }); visuals.updateSummary([1]); visuals.start();`);
+  const titles = [win.document.title];
+  for (let pass = 0; pass < 3; pass += 1) {
+    run('visuals.pulse()');
+    titles.push(win.document.title);
+  }
+  run('visuals.stop()');
+  titles.push(win.document.title);
+  return titles;
+}
+
+test('the tab title alert blinks normally and holds steady when the system asks for reduced motion', () => {
+  assert.deepEqual(alertTitles(false), ['! New chat', 'Inbox', '! New chat', 'Inbox', 'Inbox']);
+  assert.deepEqual(alertTitles(true), ['! New chat', '! New chat', '! New chat', '! New chat', 'Inbox']);
+});

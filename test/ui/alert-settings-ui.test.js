@@ -243,6 +243,14 @@ test('mounting injects the settings stylesheet once', async () => {
   win.close();
 });
 
+test('the toggle knob stops sliding when the system asks for reduced motion', async () => {
+  const { win } = loadSettingsUi();
+  await settled();
+  const css = win.document.getElementById('isa-alert-settings-style').textContent;
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\)\s*\{[^}]*input::after \{ transition: none; \}/);
+  win.close();
+});
+
 test('Your inbox row starts checked before storage confirms, matching the default-on spec', async () => {
   const { win, pendingReads } = loadSettingsUi({ deferGet: true });
   await settled();

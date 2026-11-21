@@ -92,9 +92,10 @@ test('the style is injected into both the document and the shadow root', () => {
     .shadowRoot.querySelector('#isa-duplicate-customer-style');
   assert.ok(documentStyle, 'document style');
   assert.ok(shadowStyle, 'shadow root style');
-  assert.match(documentStyle.textContent, /--isa-dup-hue: #c2255c/);
-  assert.match(documentStyle.textContent, /@media \(prefers-color-scheme: dark\)/);
-  assert.match(documentStyle.textContent, /--isa-dup-hue: #f06595/);
+  assert.match(documentStyle.textContent, /:root \{\s*--isa-dup-1: #c2255c;/);
+  assert.match(documentStyle.textContent, /:root\[data-isa-theme="dark"\] \{\s*--isa-dup-1: #f06595;/);
+  assert.match(shadowStyle.textContent, /--isa-dup-hue: var\(--isa-dup-1\)/);
+  assert.equal(documentStyle.textContent.includes('prefers-color-scheme'), false);
 });
 
 test('each group gets its own hue, and both rows of a group share it', () => {

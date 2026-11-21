@@ -2,7 +2,6 @@ const SUPPORT_ORIGIN_ROW_CLASS = 'isa-support-origin-row';
 const SUPPORT_ORIGIN_CHIP_CLASS = 'isa-support-origin-chip';
 const SUPPORT_ORIGIN_STYLE_ID = 'isa-support-origin-style';
 const SUPPORT_ORIGIN_ATTRIBUTE = 'data-isa-support-origin';
-const SUPPORT_ORIGIN_INK = { light: '#525252', dark: '#a3a3a3' };
 
 const CUSTOMER_NAME_IGNORED_SELECTOR = [
   SELECTORS.conversationListRowAvatar,
@@ -14,7 +13,7 @@ const CUSTOMER_NAME_IGNORED_SELECTOR = [
 const SUPPORT_ORIGIN_CSS = `${ROW_CHIP_TRAY_CSS}
     .${SUPPORT_ORIGIN_ROW_CLASS} {
       position: relative !important;
-      --isa-origin-ink: ${SUPPORT_ORIGIN_INK.light};
+      --isa-origin-ink: var(--isa-ink-muted);
     }
 
     .${SUPPORT_ORIGIN_ROW_CLASS}::after {
@@ -35,25 +34,14 @@ const SUPPORT_ORIGIN_CSS = `${ROW_CHIP_TRAY_CSS}
       flex: 0 0 auto;
       height: 16px;
       padding: 0 5px;
-      border: 1px solid ${SUPPORT_ORIGIN_INK.light};
+      border: 1px solid var(--isa-ink-muted);
       border-radius: 9999px;
       font-size: 11px;
       font-weight: 600;
       line-height: 14px;
-      color: ${SUPPORT_ORIGIN_INK.light};
+      color: var(--isa-ink-muted);
       background-color: transparent;
       white-space: nowrap;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      .${SUPPORT_ORIGIN_ROW_CLASS} {
-        --isa-origin-ink: ${SUPPORT_ORIGIN_INK.dark};
-      }
-
-      .${SUPPORT_ORIGIN_CHIP_CLASS} {
-        border-color: ${SUPPORT_ORIGIN_INK.dark};
-        color: ${SUPPORT_ORIGIN_INK.dark};
-      }
     }
   `;
 

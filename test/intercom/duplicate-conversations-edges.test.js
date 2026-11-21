@@ -19,15 +19,18 @@ const {
 
 const styleText = win => win.document.getElementById('isa-duplicate-customer-style').textContent;
 
-const slotColours = (css, slot) => {
-  const darkAt = css.indexOf('@media (prefers-color-scheme: dark)');
-  assert.ok(darkAt > 0, 'a dark media block exists');
+const positionColours = (css, position) => {
+  const darkAt = css.indexOf(':root[data-isa-theme="dark"]');
+  assert.ok(darkAt > 0, 'a dark theme block exists');
+  assert.equal(css.includes('prefers-color-scheme'), false, 'the system preference never picks the hue');
+  assert.match(css, new RegExp(`\\.isa-dup-c${position}\\s*\\{\\s*--isa-dup-hue:\\s*var\\(--isa-dup-${position}\\);\\s*--isa-dup-ink:\\s*var\\(--isa-dup-${position}-ink\\);`));
   const read = (scope) => {
-    const match = scope.match(new RegExp(`\\.isa-dup-c${slot}\\s*\\{[^}]*?--isa-dup-hue:\\s*(#[0-9a-fA-F]+);\\s*--isa-dup-ink:\\s*(#[0-9a-fA-F]+);`));
-    assert.ok(match, `slot ${slot} declared in scope`);
+    const match = scope.match(new RegExp(`--isa-dup-${position}:\\s*(#[0-9a-fA-F]+);\\s*--isa-dup-${position}-ink:\\s*(#[0-9a-fA-F]+);`));
+    assert.ok(match, `position ${position} declared in scope`);
     return { hue: match[1].toLowerCase(), ink: match[2].toLowerCase() };
   };
-  return { light: read(css.slice(0, darkAt)), dark: read(css.slice(darkAt)) };
+  const classesAt = css.indexOf('.isa-dup-c1');
+  return { light: read(css.slice(0, darkAt)), dark: read(css.slice(darkAt, classesAt)) };
 };
 
 const withoutConversationId = html => html.replace(/\sdata-conversation-id="[^"]*"/, '');
@@ -36,43 +39,43 @@ const forgetMany = (win, ids) => ids.forEach(id => win.forgetDuplicateConversati
 
 const fillerIds = (count, prefix = 'f') => Array.from({ length: count }, (_, i) => `${prefix}${i}`);
 
-test('hue slot 1 uses its light colour and ink in light mode and its dark pair in dark mode', () => {
+test('hue position 1 uses its light colour and ink in light mode and its dark pair in dark mode', () => {
   const win = build([row('1', TAMSIN), row('2', TAMSIN)]);
   win.refreshDuplicateCustomerHighlights();
-  const colours = slotColours(styleText(win), 1);
+  const colours = positionColours(styleText(win), 1);
 
   assert.deepEqual(colours.light, { hue: '#c2255c', ink: '#ffffff' });
   assert.deepEqual(colours.dark, { hue: '#f06595', ink: '#16161a' });
 });
 
-test('hue slot 4 keeps its own light and dark colours, not slot 1', () => {
+test('hue position 4 keeps its own light and dark colours, not position 1', () => {
   const win = build([row('1', TAMSIN), row('2', TAMSIN)]);
   win.refreshDuplicateCustomerHighlights();
-  const colours = slotColours(styleText(win), 4);
+  const colours = positionColours(styleText(win), 4);
 
   assert.deepEqual(colours.light, { hue: '#e8590c', ink: '#ffffff' });
   assert.deepEqual(colours.dark, { hue: '#ff922b', ink: '#16161a' });
 });
 
-test('the last base-palette slot 6 keeps its own light and dark colours', () => {
+test('the last base-palette position 6 keeps its own light and dark colours', () => {
   const win = build([row('1', TAMSIN), row('2', TAMSIN)]);
   win.refreshDuplicateCustomerHighlights();
   const css = styleText(win);
-  const colours = slotColours(css, 6);
+  const colours = positionColours(css, 6);
 
   assert.deepEqual(colours.light, { hue: '#0c8599', ink: '#ffffff' });
   assert.deepEqual(colours.dark, { hue: '#3bc9db', ink: '#16161a' });
   assert.equal(/\.isa-dup-c7\s*\{/.test(css), false, 'the base palette ends at six slots');
 });
 
-test('light and dark hues differ for every slot, so no slot reuses one colour in both modes', () => {
+test('light and dark hues differ for every position, so no position reuses one colour in both modes', () => {
   const win = build([row('1', TAMSIN), row('2', TAMSIN)]);
   win.refreshDuplicateCustomerHighlights();
   const css = styleText(win);
-  for (let slot = 1; slot <= 6; slot += 1) {
-    const colours = slotColours(css, slot);
-    assert.notEqual(colours.light.hue, colours.dark.hue, `slot ${slot} hue`);
-    assert.notEqual(colours.light.ink, colours.dark.ink, `slot ${slot} ink`);
+  for (let position = 1; position <= 6; position += 1) {
+    const colours = positionColours(css, position);
+    assert.notEqual(colours.light.hue, colours.dark.hue, `position ${position} hue`);
+    assert.notEqual(colours.light.ink, colours.dark.ink, `position ${position} ink`);
   }
 });
 

@@ -1,9 +1,15 @@
 const IN_PROGRESS_HIGHLIGHT_CSS = `
     .${IN_PROGRESS_HIGHLIGHT_CLASS} {
-      background-color: #fee2e2 !important;
-      border: 2px solid #ef4444 !important;
-      box-shadow: 0 0 10px rgba(239, 68, 68, 0.6) !important;
-      transition: all 0.2s ease-in-out;
+      background-color: color-mix(in srgb, var(--isa-block) 18%, transparent) !important;
+      border: 2px solid var(--isa-block) !important;
+      box-shadow: 0 0 10px color-mix(in srgb, var(--isa-block) 60%, transparent) !important;
+      transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .${IN_PROGRESS_HIGHLIGHT_CLASS} {
+        transition: none;
+      }
     }
   `;
 

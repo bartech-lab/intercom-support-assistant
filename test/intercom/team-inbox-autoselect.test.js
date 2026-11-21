@@ -198,6 +198,15 @@ test('the injected style hides the Assign-to modal only under html.isa-assigning
   assert.match(style.textContent, /opacity:\s*0\s*!important/);
 });
 
+test('the blocked-close highlight uses the shared block colour and stays still under reduced motion', () => {
+  const win = loadExtension(pageHtml());
+  const css = win.document.getElementById('isa-in-progress-highlight-style').textContent;
+  assert.match(css, /border: 2px solid var\(--isa-block\) !important/);
+  assert.equal(/#[0-9a-fA-F]{3,6}\b|rgba?\(/.test(css), false);
+  assert.equal(css.includes('transition: all'), false);
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.isa-in-progress-highlight \{\s*transition: none;/);
+});
+
 test('setTeamInboxAttribute hides the modal while driving, and a plain page is never hidden', () => {
   const win = loadExtension(pageHtml({
     sidebar: fx.sidebarSection({ teamInbox: 'Support Saltmarsh Crafts' })

@@ -129,7 +129,6 @@ const DRAFT_LANGUAGE_ACTIVE_ATTRIBUTE = 'data-isa-draft-language';
 const SIGNATURE_STATUS_CLASS = 'isa-signature-status';
 const SIGNATURE_STATUS_CHIP_CLASS = 'isa-signature-status-chip';
 const SIGNATURE_STATUS_BOX_CLASS = 'isa-signature-status-box';
-const SIGNATURE_STATUS_BOX_DARK_CLASS = 'isa-signature-status-box-dark';
 const SIGNATURE_STATUS_LINK_CLASS = 'isa-signature-status-link';
 const SIGNATURE_STATUS_STYLE_ID = 'isa-signature-status-style';
 const SIGNATURE_STATUS_REASON_ATTRIBUTE = 'data-isa-signature-status';
@@ -397,11 +396,22 @@ function composerLanguagePickerStyle() {
       border-radius: 9999px;
       background: transparent;
       color: currentColor;
-      opacity: 0.45;
+      opacity: 0.65;
       cursor: pointer;
+      position: relative;
+    }
+    .${DRAFT_LANGUAGE_CHIP_CLASS}::after {
+      content: '';
+      position: absolute;
+      inset: -4px -1px;
     }
     .${DRAFT_LANGUAGE_CHIP_CLASS}:hover {
       opacity: 0.85;
+    }
+    .${DRAFT_LANGUAGE_CHIP_CLASS}:focus-visible {
+      opacity: 1;
+      outline: 2px solid var(--isa-accent);
+      outline-offset: 1px;
     }
     .${DRAFT_LANGUAGE_ACTIVE_CLASS} {
       opacity: 1;
@@ -541,14 +551,25 @@ const SIGNATURE_STATUS_CSS = `
     padding: 1px 7px;
     border: 0;
     border-radius: 4px;
-    background: #d97706;
-    color: #ffffff;
+    background: var(--isa-warn);
+    color: var(--isa-warn-ink);
     font: inherit;
     font-size: 11px;
     font-weight: 600;
     line-height: 16px;
     white-space: nowrap;
     cursor: pointer;
+    position: relative;
+  }
+  .${SIGNATURE_STATUS_CHIP_CLASS}::after {
+    content: '';
+    position: absolute;
+    inset: -3px 0;
+  }
+  .${SIGNATURE_STATUS_CHIP_CLASS}:focus-visible,
+  .${SIGNATURE_STATUS_LINK_CLASS}:focus-visible {
+    outline: 2px solid var(--isa-accent);
+    outline-offset: 2px;
   }
   .${SIGNATURE_STATUS_CHIP_CLASS}::before {
     content: '\\24D8\\00A0';
@@ -566,22 +587,16 @@ const SIGNATURE_STATUS_CSS = `
     box-sizing: border-box;
     width: ${SIGNATURE_STATUS_BOX_WIDTH_PX}px;
     padding: 10px 12px;
-    border: 1px solid #d4d4d4;
+    border: 1px solid var(--isa-hairline);
     border-radius: 8px;
-    background: #ffffff;
-    color: #1a1a1a;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+    background: var(--isa-surface);
+    color: var(--isa-ink);
+    box-shadow: 0 6px 20px var(--isa-shadow);
     font-size: 12px;
     font-weight: 400;
     line-height: 17px;
     white-space: normal;
     text-align: left;
-  }
-  .${SIGNATURE_STATUS_BOX_DARK_CLASS} {
-    border-color: rgb(69, 69, 69);
-    background: rgb(38, 38, 38);
-    color: #f2f2f2;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
   }
   .${SIGNATURE_STATUS_BOX_CLASS} strong {
     display: block;
@@ -594,14 +609,11 @@ const SIGNATURE_STATUS_CSS = `
     padding: 0;
     border: 0;
     background: transparent;
-    color: #d97706;
+    color: var(--isa-warn);
     font: inherit;
     font-weight: 600;
     text-decoration: underline;
     cursor: pointer;
-  }
-  .${SIGNATURE_STATUS_BOX_DARK_CLASS} .${SIGNATURE_STATUS_LINK_CLASS} {
-    color: #fbbf24;
   }
 `;
 
@@ -753,7 +765,6 @@ function openSignatureStatusBox(holder) {
   const chip = signatureStatusChip(holder);
   const box = createOwnElement('div');
   box.className = SIGNATURE_STATUS_BOX_CLASS;
-  if (document.documentElement.classList.contains('dark')) box.classList.add(SIGNATURE_STATUS_BOX_DARK_CLASS);
 
   fillSignatureStatusBox(box, signatureStatusTargets.get(holder));
   holder.appendChild(box);

@@ -201,6 +201,10 @@ function buildFaviconBadge(total) {
   }
 }
 
+function isaPrefersReducedMotion() {
+  return typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
 function createAlertVisuals({ titleMarker, blinkMs, runSafe, collectActive, summarize }) {
   const state = {
     timer: null,
@@ -220,7 +224,7 @@ function createAlertVisuals({ titleMarker, blinkMs, runSafe, collectActive, summ
       state.baseTitle = current;
     }
 
-    state.showingBadge = !state.showingBadge;
+    state.showingBadge = isaPrefersReducedMotion() || !state.showingBadge;
     if (state.showingBadge) {
       document.title = alertTitle;
       state.lastSetTitle = alertTitle;

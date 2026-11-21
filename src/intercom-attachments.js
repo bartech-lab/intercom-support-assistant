@@ -24,15 +24,19 @@
       padding: 6px;
     }
     .${BUTTON_CLASS}:hover, .${BUTTON_CLASS}:focus-visible { opacity: 1; }
+    .${BUTTON_CLASS}:focus-visible,
+    .isa-attachment-panel-close:focus-visible,
+    .isa-attachment-row:focus-visible,
+    .isa-attachment-download:focus-visible { outline: 2px solid var(--isa-accent); outline-offset: -2px; }
     .${BUTTON_CLASS} svg { display: block; height: 16px; width: 16px; }
     .isa-attachments-count { font-size: 12px; font-weight: 650; line-height: 1; }
     .${PANEL_CLASS} {
-      background: var(--isa-attachment-bg, #ffffff);
-      border: 1px solid var(--isa-attachment-border, #c9ccd2);
+      background: var(--isa-surface);
+      border: 1px solid var(--isa-hairline);
       border-radius: 8px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, .22);
+      box-shadow: 0 10px 30px var(--isa-shadow);
       box-sizing: border-box;
-      color: var(--isa-attachment-text, #242933);
+      color: var(--isa-ink);
       display: flex;
       flex-direction: column;
       font: 13px/1.4 system-ui, sans-serif;
@@ -42,19 +46,10 @@
       position: fixed;
       z-index: 2147483000;
     }
-    @media (prefers-color-scheme: dark) {
-      .${PANEL_CLASS} {
-        --isa-attachment-bg: #20242b;
-        --isa-attachment-border: #4b5360;
-        --isa-attachment-text: #f3f4f6;
-        --isa-attachment-muted: #99a1ad;
-        --isa-attachment-hover: #2b313a;
-      }
-    }
     .${PANEL_CLASS} * { box-sizing: border-box; }
     .isa-attachment-panel-header {
       align-items: center;
-      border-bottom: 1px solid var(--isa-attachment-border, #c9ccd2);
+      border-bottom: 1px solid var(--isa-hairline);
       display: flex;
       gap: 10px;
       justify-content: space-between;
@@ -70,18 +65,18 @@
       font-size: 17px;
       line-height: 1;
       opacity: .6;
-      padding: 2px 6px;
+      padding: 4px 7px;
     }
     .isa-attachment-panel-close:hover, .isa-attachment-panel-close:focus-visible { opacity: 1; }
     .isa-attachment-list { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 4px; }
-    .isa-attachment-empty { color: var(--isa-attachment-muted, #66707d); display: block; padding: 12px 8px; }
+    .isa-attachment-empty { color: var(--isa-ink-muted); display: block; padding: 12px 8px; }
     .isa-attachment-item {
       align-items: center;
       border-radius: 5px;
       display: flex;
       gap: 2px;
     }
-    .isa-attachment-item:hover { background: var(--isa-attachment-hover, #f0f1f4); }
+    .isa-attachment-item:hover { background: var(--isa-surface-2); }
     .isa-attachment-row {
       background: transparent;
       border: 0;
@@ -95,7 +90,7 @@
       padding: 7px 8px;
       text-align: left;
     }
-    .isa-attachment-row:focus-visible { background: var(--isa-attachment-hover, #f0f1f4); }
+    .isa-attachment-row:focus-visible { background: var(--isa-surface-2); }
     .isa-attachment-row[disabled] { cursor: default; }
     .isa-attachment-row[disabled] .isa-attachment-name { opacity: .65; }
     .isa-attachment-download {
@@ -111,8 +106,11 @@
     .isa-attachment-download:hover, .isa-attachment-download:focus-visible { opacity: 1; }
     .isa-attachment-download svg { display: block; height: 15px; width: 15px; }
     .isa-attachment-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .isa-attachment-meta { color: var(--isa-attachment-muted, #66707d); display: block; font-size: 11px; margin-top: 2px; }
+    .isa-attachment-meta { color: var(--isa-ink-muted); display: block; font-size: 11px; margin-top: 2px; }
     .${HIGHLIGHT_CLASS} { animation: isa-attachment-highlight 2.4s ease-out; }
+    @media (prefers-reduced-motion: reduce) {
+      .${HIGHLIGHT_CLASS} { animation: none; outline: 2px solid var(--isa-warn); outline-offset: -2px; }
+    }
     @keyframes isa-attachment-highlight { 0%, 55% { background-color: rgba(255, 220, 90, .7); } 100% { background-color: transparent; } }
   `;
 
@@ -121,6 +119,7 @@
 
   function ensureStyle(document, root) {
     if (!document || !document.createElement) return;
+    isaEnsureTokens();
     if (document.head && !document.getElementById(STYLE_ID)) {
       const style = document.createElement('style');
       style.id = STYLE_ID;

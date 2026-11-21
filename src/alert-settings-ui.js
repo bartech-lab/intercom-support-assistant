@@ -116,6 +116,9 @@
       content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px;
       border-radius: 50%; background: var(--ink-muted, #5b6472); transition: transform 120ms ease;
     }
+    @media (prefers-reduced-motion: reduce) {
+      .isa-alert-settings .isa-alert-toggle input::after { transition: none; }
+    }
     .isa-alert-settings .isa-alert-toggle input:checked { background: var(--accent, #1d4ed8); border-color: var(--accent, #1d4ed8); }
     .isa-alert-settings .isa-alert-toggle input:checked::after { transform: translateX(16px); background: var(--accent-ink, #fff); }
     .isa-alert-settings .isa-alert-toggle input:disabled { opacity: 0.55; }

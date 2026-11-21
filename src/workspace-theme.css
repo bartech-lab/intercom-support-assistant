@@ -10,7 +10,6 @@
   --link: #1d4ed8;
   --shadow: rgba(15, 23, 42, 0.04);
   --shadow-strong: rgba(15, 23, 42, 0.08);
-  --mono: inherit;
   color-scheme: light;
 }
 :root[data-theme="dark"] {

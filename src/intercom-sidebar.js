@@ -253,7 +253,7 @@ const MULTI_RECIPIENT_EMAIL_HIGHLIGHT_CSS = `
       bottom: 0;
       left: -16px;
       box-sizing: border-box;
-      border: 2px solid #eab308;
+      border: 2px solid var(--isa-warn);
       border-radius: 8px 8px 0 0;
       pointer-events: none;
     }
