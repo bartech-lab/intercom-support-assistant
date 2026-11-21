@@ -58,5 +58,5 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: extension-zip
-          path: Intercom-Support-Assistant-*.zip
+          path: Intercom-Support-Assistant.zip
           if-no-files-found: error
