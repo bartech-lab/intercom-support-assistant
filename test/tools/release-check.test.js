@@ -20,9 +20,7 @@ function copyFixture() {
   for (const entry of ['src', 'tools', 'docs']) {
     fs.cpSync(path.join(REPO, entry), path.join(dir, entry), { recursive: true });
   }
-  for (const file of ['CHANGELOG.md', 'package.json']) {
-    fs.copyFileSync(path.join(REPO, file), path.join(dir, file));
-  }
+  fs.copyFileSync(path.join(REPO, 'package.json'), path.join(dir, 'package.json'));
   return dir;
 }
 
@@ -31,14 +29,6 @@ function runReleaseCheck(root) {
     cwd: root,
     encoding: 'utf8'
   });
-}
-
-function readManifestVersion(root) {
-  return JSON.parse(fs.readFileSync(path.join(root, 'src', 'manifest.json'), 'utf8')).version;
-}
-
-function escapeRegExp(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function replaceInFile(filePath, search, replacement) {
@@ -51,40 +41,7 @@ test('a clean checkout copy passes release-check', () => {
   const root = copyFixture();
   const result = runReleaseCheck(root);
   assert.equal(result.status, 0, result.stdout + result.stderr);
-  assert.match(result.stdout, /Release checks passed for v/);
-});
-
-test('a manifest version disagreeing with the popup fails naming the popup', () => {
-  const root = copyFixture();
-  const version = readManifestVersion(root);
-  replaceInFile(path.join(root, 'src', 'manifest.json'), `"version": "${version}"`, '"version": "9.9.9.9"');
-  const result = runReleaseCheck(root);
-  assert.notEqual(result.status, 0);
-  assert.match(result.stdout + result.stderr, /popup version does not match manifest version 9\.9\.9\.9/);
-});
-
-test('a popup that no longer shows the current version fails naming the popup', () => {
-  const root = copyFixture();
-  const version = readManifestVersion(root);
-  replaceInFile(path.join(root, 'src', 'popup.html'), `v${version}`, 'vSTALE');
-  const result = runReleaseCheck(root);
-  assert.notEqual(result.status, 0);
-  assert.match(
-    result.stdout + result.stderr,
-    new RegExp(`popup version does not match manifest version ${escapeRegExp(version)}`)
-  );
-});
-
-test('a top CHANGELOG entry with the wrong version fails naming the CHANGELOG', () => {
-  const root = copyFixture();
-  const version = readManifestVersion(root);
-  replaceInFile(path.join(root, 'CHANGELOG.md'), `## [${version}]`, '## [9.9.9.9]');
-  const result = runReleaseCheck(root);
-  assert.notEqual(result.status, 0);
-  assert.match(
-    result.stdout + result.stderr,
-    new RegExp(`top CHANGELOG version does not match manifest version ${escapeRegExp(version)}`)
-  );
+  assert.match(result.stdout, /Release checks passed/);
 });
 
 test('a manifest with the wrong product name fails naming the required name', () => {

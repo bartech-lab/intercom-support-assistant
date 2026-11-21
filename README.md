@@ -89,14 +89,12 @@ each view went to zero at once.
   with the health report embedded. A capture is distilled into an invented
   fixture and then deleted. See [docs/dom-capture.md](docs/dom-capture.md).
 
-## Release process
+## Verification
 
-Four-part versions. `tools/bump-version.js` plans and applies a bump.
-`npm run verify` runs six gates (tests, syntax, whitespace, release consistency,
-build with artifact verification, ZIP check) and leaves the ZIP that a release
-attaches; it is the same folder as `src/`, packed. `tools/release-plan.js`
-checks that the release is publishable and prints the commands. Nothing tags or
-publishes on its own. See [RELEASE.md](RELEASE.md).
+There are no versions or releases; changes land on `main`. `npm run verify`
+runs six gates (tests, syntax, whitespace, consistency checks, build with
+artifact verification, ZIP check) and leaves `Intercom-Support-Assistant.zip`,
+the same folder as `src/`, packed. See [RELEASE.md](RELEASE.md).
 
 ## No real data, enforced
 
@@ -113,9 +111,8 @@ with it, and a missing list is exit code 2, not a pass. CI also runs
 
 There is no Chrome Web Store listing; the extension is loaded unpacked.
 
-1. Get the extension folder: unzip the release asset
-   `Intercom-Support-Assistant-v<version>.zip` into a new folder, or use `src/`
-   from a clone of this repository.
+1. Get the extension folder: use `src/` from a clone of this repository, or
+   unzip the `Intercom-Support-Assistant.zip` that `npm run verify` builds.
 2. Open `chrome://extensions`, turn on **Developer mode**, click **Load
    unpacked**, and pick that folder.
 3. Open `app.intercom.com`.

@@ -59,14 +59,14 @@ docs/     reference docs, listed below.
 | [docs/dom-capture.md](docs/dom-capture.md) | Capturing a live page, format, replay |
 | [docs/support-tools.md](docs/support-tools.md) | Workspace, captures, settings backup, debug flags |
 | [docs/code-style.md](docs/code-style.md) | No code comments; where rationale goes instead |
-| [RELEASE.md](RELEASE.md) | Release procedure |
+| [RELEASE.md](RELEASE.md) | Verification and smoke check |
 
 ## What already enforces itself
 
 | Concern | Enforcer |
 | --- | --- |
 | Which files ship, and the content-script order | `tools/artifact-verifier.js` |
-| Version and product name alignment | `tools/release-check.js` |
+| Product name and description | `tools/release-check.js` |
 | Domain map coverage and links | `test/tools/domain-map.test.js` |
 | No code comments | `test/tools/code-style.test.js` |
 | No real data, secrets, or foreign hosts | `scripts/leak-scan.mjs`, `test/tools/leak-scan.test.js`, CI |

@@ -3,7 +3,6 @@
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
-const { ARTIFACT_PREFIX } = require('./build-release');
 
 const ROOT = path.join(__dirname, '..');
 const SRC = path.join(ROOT, 'src');
@@ -21,10 +20,6 @@ function runNodeScript(fileName) {
   }
 }
 
-function read(fileName) {
-  return fs.readFileSync(path.join(ROOT, fileName), 'utf8');
-}
-
 function readSrc(fileName) {
   return fs.readFileSync(path.join(SRC, fileName), 'utf8');
 }
@@ -39,9 +34,6 @@ function main() {
   runNodeScript('update-preview.js');
 
   const manifest = JSON.parse(readSrc('manifest.json'));
-  const popup = readSrc('popup.html');
-  const changelog = read('CHANGELOG.md');
-  const version = manifest.version;
 
   if (manifest.name !== PRODUCT_NAME) {
     fail(`manifest name must be "${PRODUCT_NAME}"`);
@@ -49,18 +41,6 @@ function main() {
 
   if (manifest.description !== PRODUCT_DESCRIPTION) {
     fail('manifest description does not match the current product description');
-  }
-
-  const versionPattern = '(\\d+\\.\\d+\\.\\d+(?:\\.\\d+)?)';
-  const popupVersion = popup.match(new RegExp(`v${versionPattern}`));
-  const changelogVersion = changelog.match(new RegExp(`^## \\[${versionPattern}\\]`, 'm'));
-
-  if (!popupVersion || popupVersion[1] !== version) {
-    fail(`popup version does not match manifest version ${version}`);
-  }
-
-  if (!changelogVersion || changelogVersion[1] !== version) {
-    fail(`top CHANGELOG version does not match manifest version ${version}`);
   }
 
   ['signatures-data.js'].forEach((fileName) => {
@@ -71,21 +51,14 @@ function main() {
 
   fs.readdirSync(SRC).filter(fileName => fileName.endsWith('.js')).forEach((fileName) => {
     if (/^\s*const DEBUG = true\s*;/m.test(readSrc(fileName))) {
-      fail(`${fileName} still has DEBUG = true; set it back to false before releasing`);
+      fail(`${fileName} still has DEBUG = true; set it back to false`);
     }
   });
 
   runNodeScript('build-release.js');
 
   console.log('');
-  console.log(`Release checks passed for v${version}`);
-  console.log('Next steps:');
-  console.log('1. Review git diff');
-  console.log('2. Commit the release changes');
-  console.log('3. Push the branch');
-  console.log('4. Package the public release zip:');
-  console.log('   node tools/build-release.js --zip');
-  console.log(`5. Create release: gh release create v${version} ${ARTIFACT_PREFIX}-v${version}.zip --title "v${version}: <summary>" --notes "<release notes>"`);
+  console.log('Release checks passed');
 }
 
 main();

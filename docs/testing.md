@@ -3,7 +3,7 @@
 ```bash
 npm ci
 npm test          # 2,200+ tests, about 15 s on one laptop
-npm run verify    # the full release gate, see RELEASE.md
+npm run verify    # the full verification gate, see RELEASE.md
 ```
 
 The suite uses the Node test runner and jsdom, and nothing else. There is no
@@ -70,7 +70,7 @@ there.
 | Every runtime and test file is mapped in [domain.md](domain.md), and its links resolve | `test/tools/domain-map.test.js` |
 | The build ships only Intercom, with no host outside the allowlist | `test/tools/packaging.test.js` |
 | The leak scanner catches each planted secret, id, address and listed term | `test/tools/leak-scan.test.js` |
-| Version and product name agree across manifest, popup and changelog | `test/tools/release-check.test.js` |
+| Product name and description match the manifest | `test/tools/release-check.test.js` |
 
 ## Runtime test
 

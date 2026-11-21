@@ -67,16 +67,8 @@ function runSyntaxChecks() {
 }
 
 function confirmZipFiles() {
-  console.log('\n=== [6/6] Confirm versioned ZIP file ===');
-  let manifest;
-  try {
-    manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'));
-  } catch (error) {
-    console.error(`FAILED: could not read manifest.json: ${error.message}`);
-    return 1;
-  }
-
-  const fileName = `Intercom-Support-Assistant-v${manifest.version}.zip`;
+  console.log('\n=== [6/6] Confirm ZIP file ===');
+  const fileName = 'Intercom-Support-Assistant.zip';
   const filePath = path.join(ROOT, fileName);
   let stats;
   try {

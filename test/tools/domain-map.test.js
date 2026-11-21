@@ -14,8 +14,8 @@ function isGitIgnored(repoPath) {
 const FENCED_BLOCK = /^\s*(```+|~~~+)/;
 const INLINE_PATH = /`([^`]+)`/g;
 const MARKDOWN_LINK = /!?\[[^\]]*\]\(([^)]+)\)/g;
-const ROOT_DOCUMENT = /^(?:AGENTS|README|CHANGELOG|RELEASE)\.md$/;
-const LOCAL_PATH = /^(?:(?:src|test|tools|docs)\/|(?:AGENTS|README|CHANGELOG|RELEASE)\.md$)/;
+const ROOT_DOCUMENT = /^(?:AGENTS|README|RELEASE)\.md$/;
+const LOCAL_PATH = /^(?:(?:src|test|tools|docs)\/|(?:AGENTS|README|RELEASE)\.md$)/;
 
 function javascriptFiles(directory, root = ROOT) {
   const found = [];
@@ -214,7 +214,7 @@ function validateDomainMap({ domainPath, sourceFiles, testFiles, documents, file
 
 function readDocumentation(root) {
   const documents = new Map();
-  const rootDocuments = ['AGENTS.md', 'README.md', 'CHANGELOG.md', 'RELEASE.md'];
+  const rootDocuments = ['AGENTS.md', 'README.md', 'RELEASE.md'];
   const pending = ['docs'];
 
   for (const documentPath of rootDocuments) {

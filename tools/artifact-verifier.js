@@ -114,7 +114,6 @@ const DEV_FILE_NAMES = new Set([
   'AGENTS.md',
   'CLAUDE.md',
   'README.md',
-  'CHANGELOG.md',
   'RELEASE.md'
 ]);
 

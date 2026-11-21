@@ -1,25 +1,10 @@
-# Release process
+# Verification
 
-A release is one GitHub release carrying exactly one asset,
-`Intercom-Support-Assistant-vX.Y.Z.W.zip`. Versions have four parts:
-`major.minor.patch.build`.
+There are no versions, tags or releases. Changes land on `main`, mostly as
+ports from the private repository. Run these before pushing a change that
+affects what ships.
 
-No step below tags or publishes on its own. The last step prints the commands
-and a person runs them.
-
-## 1. Bump the version
-
-```bash
-node tools/bump-version.js patch --notes=scratchpad/notes.md          # dry run
-node tools/bump-version.js patch --notes=scratchpad/notes.md --apply
-```
-
-`patch`, `minor`, or an explicit `X.Y.Z.W`. The tool updates the version in
-`src/manifest.json`, `src/popup.html`, and `README.md`, and adds a dated
-`CHANGELOG.md` entry from the notes file. A dry run prints the plan and any
-error without writing.
-
-## 2. Verify
+## 1. Verify
 
 ```bash
 npm run verify
@@ -30,7 +15,7 @@ npm run verify
 | 1. `npm test` | the whole suite |
 | 2. syntax | `node --check` on every JavaScript file in `src/`, `tools/`, `test/` |
 | 3. `git diff --check` | whitespace errors |
-| 4. `tools/release-check.js` | product name, description, and version agree across manifest, popup and changelog; signature config validates; the preview data is regenerated; no `DEBUG = true` constant is left in `src/` |
+| 4. `tools/release-check.js` | product name and description match the manifest; signature config validates; the preview data is regenerated; no `DEBUG = true` constant is left in `src/` |
 | 5. `tools/build-release.js --zip` | builds `dist/` from `src/`, runs the artifact verifier, writes the ZIP |
 | 6. ZIP check | the ZIP exists and is not empty |
 
@@ -41,7 +26,7 @@ their order, and the only host permission is `https://app.intercom.com/*`.
 Run verification serially in one checkout: the build deletes and recreates
 `dist/`.
 
-## 3. Manual smoke check
+## 2. Manual smoke check
 
 Load `dist/` unpacked against an Intercom workspace with test data:
 
@@ -55,24 +40,3 @@ Load `dist/` unpacked against an Intercom workspace with test data:
 - An auto-delete note shows its deadline chip and is removed after expiry on the
   next visit to that contact.
 - The popup and workspace work in light and dark themes at 390 px wide.
-
-## 4. Commit and push
-
-Commit the version bump and push to `main`. `dist/` and ZIPs are git-ignored.
-
-## 5. Release
-
-```bash
-node tools/release-plan.js
-```
-
-It checks that `HEAD` is a clean, pushed `main`, that the tag and the release do
-not exist yet, that the ZIP is newer than the last commit, and that the changelog
-has an entry. It exits 1 listing every blocker, or prints the tag, `gh release
-create`, and verification commands to run by hand.
-
-After publishing, extract the asset and run:
-
-```bash
-node tools/verify-artifact.js /path/to/extracted-extension
-```

@@ -29,11 +29,10 @@ function main() {
   console.log('Done. dist/ is clean.');
 
   if (process.argv.includes('--zip')) {
-    const manifest = JSON.parse(fs.readFileSync(path.join(SRC, 'manifest.json'), 'utf8'));
-    const zipFile = `${ARTIFACT_PREFIX}-v${manifest.version}.zip`;
+    const zipFile = `${ARTIFACT_PREFIX}.zip`;
 
     for (const f of fs.readdirSync('.')) {
-      if (f.startsWith(`${ARTIFACT_PREFIX}-v`) && f.endsWith('.zip')) fs.unlinkSync(f);
+      if (f.startsWith(ARTIFACT_PREFIX) && f.endsWith('.zip')) fs.unlinkSync(f);
     }
 
     let r = spawnSync('7z', ['a', '-tzip', path.resolve(zipFile), '.'], { cwd: dist, stdio: 'pipe' });

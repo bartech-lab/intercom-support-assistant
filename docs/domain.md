@@ -291,17 +291,15 @@ Tests:
 
 ## Repository tooling
 
-Release, verification and publication checks. See [testing.md](testing.md#repository-rules-enforced-as-tests). `tools/record-demo.js` records the README demo GIF from the real extension in Chromium.
+Verification and publication checks. See [testing.md](testing.md#repository-rules-enforced-as-tests). `tools/record-demo.js` records the README demo GIF from the real extension in Chromium.
 
 Tests:
 
-- `test/tools/bump-version.test.js`
 - `test/tools/code-style.test.js`
 - `test/tools/domain-map.test.js`
 - `test/tools/leak-scan.test.js`
 - `test/tools/packaging.test.js`
 - `test/tools/release-check.test.js`
-- `test/tools/release-plan.test.js`
 
 ## Test support
 
