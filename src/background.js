@@ -89,10 +89,117 @@ function createNotificationWithIconFallback(notificationId, options, retryWithou
   create(options, retryWithoutIcon);
 }
 
+const ALERT_HISTORY_KEY = 'isaAlertHistory';
+const ALERT_HISTORY_LIMIT = 50;
+const ALERT_BADGE_COLOR = '#c92a16';
+const ALERT_HISTORY_TAB_PATTERN = 'https://app.intercom.com/*';
+let alertHistoryQueue = Promise.resolve();
+
+function alertHistoryStorage() {
+  return chrome.storage && chrome.storage.local ? chrome.storage.local : null;
+}
+
+function readAlertHistory() {
+  const storage = alertHistoryStorage();
+  if (!storage) return Promise.resolve([]);
+  return new Promise((resolve) => {
+    try {
+      storage.get([ALERT_HISTORY_KEY], (stored) => {
+        const list = !chrome.runtime.lastError && stored ? stored[ALERT_HISTORY_KEY] : null;
+        resolve(Array.isArray(list) ? list : []);
+      });
+    } catch (error) {
+      resolve([]);
+    }
+  });
+}
+
+function writeAlertHistory(list) {
+  const storage = alertHistoryStorage();
+  if (!storage) return Promise.resolve();
+  return new Promise((resolve) => {
+    try {
+      storage.set({ [ALERT_HISTORY_KEY]: list }, () => {
+        void chrome.runtime.lastError;
+        resolve();
+      });
+    } catch (error) {
+      resolve();
+    }
+  });
+}
+
+function showAlertBadge(list) {
+  if (!chrome.action || typeof chrome.action.setBadgeText !== 'function') return;
+  const unseen = list.filter(entry => entry && !entry.seen).length;
+  try {
+    chrome.action.setBadgeText({ text: unseen ? String(unseen) : '' });
+    if (unseen && typeof chrome.action.setBadgeBackgroundColor === 'function') {
+      chrome.action.setBadgeBackgroundColor({ color: ALERT_BADGE_COLOR });
+    }
+  } catch (error) {}
+}
+
+function updateAlertHistory(change) {
+  alertHistoryQueue = alertHistoryQueue
+    .then(readAlertHistory)
+    .then((list) => {
+      const next = change(list);
+      if (!next) {
+        showAlertBadge(list);
+        return null;
+      }
+      return writeAlertHistory(next).then(() => showAlertBadge(next));
+    })
+    .catch(() => {});
+  return alertHistoryQueue;
+}
+
+function recordAlertHistory(entry) {
+  return updateAlertHistory(list => list
+    .concat(Object.assign({ at: Date.now(), seen: false }, entry))
+    .slice(-ALERT_HISTORY_LIMIT));
+}
+
+function markAlertHistorySeen() {
+  return updateAlertHistory(list => (list.some(entry => entry && !entry.seen)
+    ? list.map(entry => Object.assign({}, entry, { seen: true }))
+    : null));
+}
+
+function refreshAlertBadge() {
+  return updateAlertHistory(() => null);
+}
+
+function focusAlertHistoryTab(sendResponse) {
+  try {
+    chrome.tabs.query({ url: [ALERT_HISTORY_TAB_PATTERN] }, (tabs) => {
+      const tab = !chrome.runtime.lastError && Array.isArray(tabs) ? tabs[0] : null;
+      if (!tab || typeof tab.id !== 'number') {
+        sendResponse({ ok: false, reason: 'no-tab' });
+        return;
+      }
+      chrome.tabs.update(tab.id, { active: true }, () => {
+        if (chrome.runtime.lastError) {
+          sendResponse({ ok: false, reason: 'no-tab' });
+          return;
+        }
+        if (tab.windowId != null) {
+          chrome.windows.update(tab.windowId, { focused: true }, () => void chrome.runtime.lastError);
+        }
+        sendResponse({ ok: true });
+      });
+    });
+  } catch (error) {
+    sendResponse({ ok: false, reason: 'no-tab' });
+  }
+}
+
 function showInboxAlertNotification(message, sender) {
   const teamId = message && message.teamId ? String(message.teamId) : 'unknown';
   const label = (message && message.label) || 'Urgent inbox';
   const count = message && Number.isFinite(message.count) ? message.count : 0;
+  recordAlertHistory({ label, count, teamId });
   showAlertNotification({
     idPrefix: `isa-inbox-${teamId}`,
     title: `New in ${label}`,
@@ -788,6 +895,11 @@ chrome.runtime.onInstalled.addListener((details) => {
   injectReloadNoticeIntoOpenSupportedTabs();
 });
 
+if (chrome.runtime.onStartup && typeof chrome.runtime.onStartup.addListener === 'function') {
+  chrome.runtime.onStartup.addListener(refreshAlertBadge);
+}
+refreshAlertBadge();
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message && message.type === 'open-preview') {
     openPreviewTab(message.section);
@@ -795,6 +907,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   } else if (message && message.type === 'inbox-alert') {
     showInboxAlertNotification(message, sender);
     sendResponse({ ok: true });
+  } else if (message && message.type === 'alert-history-seen') {
+    markAlertHistorySeen().then(() => sendResponse({ ok: true }));
+    return true;
+  } else if (message && message.type === 'alert-history-open') {
+    focusAlertHistoryTab(sendResponse);
+    return true;
   } else if (message && message.type === 'alert-test') {
     runAlertSelfTest(sendResponse);
     return true;

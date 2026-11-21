@@ -8,6 +8,7 @@
   --accent: #1d4ed8;
   --accent-ink: #ffffff;
   --link: #1d4ed8;
+  --block: #c92a16;
   --shadow: rgba(15, 23, 42, 0.04);
   --shadow-strong: rgba(15, 23, 42, 0.08);
   color-scheme: light;
@@ -22,6 +23,7 @@
   --accent: #7aa2ff;
   --accent-ink: #14181f;
   --link: #7aa2ff;
+  --block: #ff6a52;
   --shadow: rgba(0, 0, 0, 0.12);
   --shadow-strong: rgba(0, 0, 0, 0.2);
   color-scheme: dark;

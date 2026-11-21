@@ -7,17 +7,34 @@
   <script src="theme.js"></script>
   <link rel="stylesheet" href="workspace-theme.css">
   <style>
-    body { width: 360px; margin: 0; padding: 16px; background: var(--bg); color: var(--ink); }
-    .app-header { padding: 12px; gap: 8px; }
+    body { width: 360px; margin: 0; padding: 12px; background: var(--bg); color: var(--ink); }
+    .app-header { padding: 10px 12px; gap: 8px; }
     .app-header img { width: 40px; height: 28px; }
     .app-header h1 { font-size: 14px; }
-    .destinations { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 16px 0 24px; }
-    .destination { padding: 12px; min-height: 40px; border: 1px solid var(--hairline); border-radius: 8px; background: var(--surface); color: var(--ink); cursor: pointer; font-weight: 600; }
-    .destination-primary { grid-column: 1 / -1; background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-    h2 { font-size: 18px; margin: 0 0 12px; }
-    .meta { margin-top: 24px; padding-top: 12px; border-top: 1px solid var(--hairline); color: var(--ink-muted); font-size: 12px; display: flex; justify-content: space-between; }
+    .rang { margin: 12px 0; background: var(--surface); border: 1px solid var(--hairline); border-radius: 8px; overflow: hidden; }
+    .rang-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 10px 12px 6px; }
+    .rang-head h2 { font-size: 14px; font-weight: 600; margin: 0; }
+    .rang-count { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--block); }
+    .rang-count:empty { display: none; }
+    .rang-list { list-style: none; margin: 0; padding: 0; max-height: 264px; overflow-y: auto; }
+    .rang-earlier { padding: 8px 12px 2px; font-size: 12px; color: var(--ink-muted); }
+    .rang-row { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 10px; width: 100%; min-height: 36px; padding: 6px 12px 6px 9px; border: 0; border-left: 3px solid transparent; border-top: 1px solid var(--hairline); background: transparent; color: var(--ink); text-align: left; cursor: pointer; }
+    .rang-row:hover { background: var(--surface-2); }
+    .rang-row:focus-visible { outline-offset: -2px; }
+    .rang-row[data-unseen="true"] { border-left-color: var(--block); }
+    .rang-row[data-unseen="true"] .rang-label { font-weight: 600; }
+    .rang-time { font-variant-numeric: tabular-nums; color: var(--ink-muted); font-size: 12px; }
+    .rang-row[data-unseen="true"] .rang-time { color: var(--ink); }
+    .rang-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rang-empty { margin: 0; padding: 4px 12px 12px; color: var(--ink-muted); }
+    .rang-empty[hidden] { display: none; }
+    .quick-alerts { margin: 12px 0; }
+    .destinations { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0 0; }
+    .destination { padding: 8px; min-height: 36px; border: 1px solid var(--hairline); border-radius: 8px; background: var(--surface); color: var(--ink); cursor: pointer; font-weight: 600; }
+    .destination:hover { border-color: var(--ink-muted); }
+    .meta { margin-top: 12px; color: var(--ink-muted); font-size: 12px; display: flex; justify-content: space-between; }
     .meta a { color: inherit; }
-    #popupStatus { color: var(--accent); font-size: 12px; }
+    #popupStatus { margin: 8px 0 0; color: var(--accent); font-size: 12px; }
     #popupStatus:empty { display: none; }
   </style>
 </head>
@@ -27,16 +44,23 @@
     <h1>Intercom Support Assistant</h1>
     <button type="button" class="theme-toggle" data-isa-theme-toggle aria-label="Toggle theme"></button>
   </header>
+  <section class="rang" aria-labelledby="rangTitle">
+    <div class="rang-head">
+      <h2 id="rangTitle">Rang since you last looked</h2>
+      <span class="rang-count" id="rangCount" aria-label="Unseen alerts"></span>
+    </div>
+    <ol class="rang-list" id="rangList"></ol>
+    <p class="rang-empty" id="rangEmpty">Nothing rang since you last looked.</p>
+  </section>
+  <p id="popupStatus" role="status"></p>
+  <section class="quick-alerts" aria-label="Alert switches">
+    <div id="isa-alert-settings" data-isa-compact="true"></div>
+  </section>
   <nav class="destinations" aria-label="Workspace">
-    <button class="destination destination-primary" id="previewBtn" data-section="signatures" type="button">Open signatures</button>
+    <button class="destination" id="previewBtn" data-section="signatures" type="button">Signatures</button>
     <button class="destination" data-section="settings" type="button">Settings</button>
     <button class="destination" data-section="tools" type="button">Tools</button>
   </nav>
-  <p id="popupStatus" role="status"></p>
-  <section aria-labelledby="quickAlertsTitle">
-    <h2 id="quickAlertsTitle">Quick alerts</h2>
-    <div id="isa-alert-settings" data-isa-compact="true"></div>
-  </section>
   <footer class="meta"><a href="https://github.com/bartech-lab/intercom-support-assistant" target="_blank" rel="noopener noreferrer">Made by bartech-lab</a></footer>
   <script src="signatures-data.js"></script>
   <script src="alert-settings-ui.js"></script>

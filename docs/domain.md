@@ -97,10 +97,13 @@ Tests:
 
 Watched inboxes, settled counts, notifications and sounds. See [architecture](architecture.md#new-message-alerts).
 
-Source: `src/intercom-alerts-ui.js`, `src/alert-sounds.js`, `src/alert-settings-ui.js`.
+Source: `src/intercom-alerts-ui.js`, `src/alert-sounds.js`, `src/alert-settings-ui.js`, `src/background.js` (`recordAlertHistory`, `markAlertHistorySeen`, `focusAlertHistoryTab`), `src/popup.js`.
+
+Each `inbox-alert` message is appended to `isaAlertHistory` in `chrome.storage.local` (newest 50), before the desktop-notification guard, so a ring with pop-ups turned off is still listed. An entry holds the inbox label, the count and the team id, never a tab id or customer data. Opening the popup marks all seen, and the toolbar icon shows the unseen count. A row click only brings an open Intercom tab to the front; it never navigates. The history is not in the settings export.
 
 Tests:
 
+- `test/background/alert-history.test.js`
 - `test/background/alert-sounds-activation.test.js`
 - `test/background/alert-sounds-schedule.test.js`
 - `test/background/alert-sounds.test.js`
@@ -120,6 +123,7 @@ Tests:
 - `test/ui/alert-settings-ui-test-button-and-load.test.js`
 - `test/ui/alert-settings-ui-write-and-render.test.js`
 - `test/ui/alert-settings-ui.test.js`
+- `test/ui/popup-alert-history.test.js`
 
 ## Self-deleting notes
 

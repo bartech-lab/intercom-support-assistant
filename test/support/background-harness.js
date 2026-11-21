@@ -74,6 +74,8 @@ function loadBackground(opts = {}) {
   const notificationsCleared = [];
   const tabUpdates = [];
   const tabsCreated = [];
+  const badgeTexts = [];
+  const badgeColors = [];
   const shownNotifications = new Set(shownSeed);
   const windowUpdates = [];
   const workspaceMessages = [];
@@ -83,6 +85,7 @@ function loadBackground(opts = {}) {
       sendMessage(message, callback) { workspaceMessages.push(message); if (callback) callback(); },
       getURL: resource => `chrome-extension://test/${resource}`,
       onInstalled: { addListener: listener => { listeners.installed = listener; } },
+      onStartup: { addListener: listener => { listeners.startup = listener; } },
       onMessage: { addListener: listener => { listeners.message = listener; } },
       getManifest: () => manifest,
       lastError: null
@@ -142,6 +145,10 @@ function loadBackground(opts = {}) {
         callback(result);
         chrome.runtime.lastError = null;
       }
+    },
+    action: {
+      setBadgeText(details) { badgeTexts.push(details.text); },
+      setBadgeBackgroundColor(details) { badgeColors.push(details.color); }
     },
     tabs: {
       query(_query, callback) {
@@ -236,6 +243,8 @@ function loadBackground(opts = {}) {
     tabUpdates,
     workspaceMessages,
     tabsCreated,
+    badgeTexts,
+    badgeColors,
     windowUpdates,
     shownNotifications,
     tabMessageCalls,

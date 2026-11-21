@@ -2,8 +2,11 @@
 
 ## Popup and workspace
 
-The popup has three buttons, **Open signatures**, **Settings**, and **Tools**,
-plus a **Quick alerts** switch with a summary of the watched inboxes. Each button
+The popup lists what rang since you last looked, newest first, with the time and
+inbox. The toolbar icon shows the same unseen count; opening the popup marks the
+rings seen. A row click brings an open Intercom tab to the front and never
+navigates. After the list come the alert switches with a summary of the watched
+inboxes, and three buttons, **Signatures**, **Settings**, and **Tools**. Each button
 opens one shared workspace tab at the chosen section; a second click reuses that
 tab. Direct links work too: `#signatures`, `#settings`, `#tools`.
 
