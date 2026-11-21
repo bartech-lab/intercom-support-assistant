@@ -289,7 +289,7 @@ const ISA_ALERT_PACING_KEYS = {
   quietStart: 'isaAlertQuietStart',
   quietEnd: 'isaAlertQuietEnd'
 };
-const ISA_ALERT_REPEAT_MINUTES = [1, 2, 3, 5, 10];
+const ISA_ALERT_REPEAT_MAX_MINUTES = 60;
 const ISA_ALERT_REPEAT_DEFAULT_MINUTES = 3;
 const ISA_ALERT_REPEAT_MAX = 3;
 
@@ -299,7 +299,8 @@ function isaClockMinutes(text) {
 }
 
 function isaAlertRepeatMs(minutes) {
-  return (ISA_ALERT_REPEAT_MINUTES.includes(minutes) ? minutes : ISA_ALERT_REPEAT_DEFAULT_MINUTES) * 60000;
+  const valid = Number.isInteger(minutes) && minutes >= 1 && minutes <= ISA_ALERT_REPEAT_MAX_MINUTES;
+  return (valid ? minutes : ISA_ALERT_REPEAT_DEFAULT_MINUTES) * 60000;
 }
 
 function isaInQuietHours(quietHours, date) {

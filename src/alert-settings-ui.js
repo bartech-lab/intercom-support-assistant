@@ -208,6 +208,8 @@
       width: 64px; min-height: 32px; padding: 4px 8px; border: 1px solid var(--hairline, #e2e6ec); border-radius: 8px;
       background: var(--surface, #ffffff); color: var(--ink, #14181f); font-variant-numeric: tabular-nums;
     }
+    .isa-alert-pacing .isa-alert-quiet select { width: auto; min-width: 96px; }
+    .isa-alert-pacing .isa-alert-quiet label[hidden] { display: none; }
     .isa-alert-pacing .isa-alert-quiet input[aria-invalid="true"] { border-color: var(--block, #b91c1c); }
     .isa-alert-settings .isa-alert-storage-status {
       margin-top: 8px; color: var(--accent, #2563eb); font-size: 12px; line-height: 1.4;
@@ -776,6 +778,10 @@
   };
   const MUTE_MINUTES = [15, 30, 60];
   const REPEAT_MINUTES = [1, 2, 3, 5, 10];
+
+  function validRepeatMinutes(minutes) {
+    return Number.isInteger(minutes) && minutes >= 1 && minutes <= 60;
+  }
   const CLOCK_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
   const PACING_SAVE_FAILED = 'Could not save this setting. Try again.';
 
@@ -807,7 +813,8 @@
       </label>
       <div class="isa-alert-quiet">
         <label>Ring again every <select data-isa="repeatMinutes" aria-label="Minutes between repeat rings">${REPEAT_MINUTES.map(minutes =>
-          `<option value="${minutes}">${minutes} min</option>`).join('')}</select></label>
+          `<option value="${minutes}">${minutes} min</option>`).join('')}<option value="custom">Custom</option></select></label>
+        <label data-isa="repeatCustomRow" hidden><input type="text" inputmode="numeric" maxlength="2" data-isa="repeatCustom" aria-label="Minutes between repeat rings, 1 to 60"> min</label>
       </div>
       <label class="isa-alert-toggle isa-alert-pacing-row">
         <span>Quiet hours</span>
@@ -828,6 +835,9 @@
     const unmuteEl = container.querySelector('[data-isa="unmute"]');
     const repeatEl = container.querySelector('[data-isa="repeat"]');
     const repeatMinutesEl = container.querySelector('[data-isa="repeatMinutes"]');
+    const repeatCustomRowEl = container.querySelector('[data-isa="repeatCustomRow"]');
+    const repeatCustomEl = container.querySelector('[data-isa="repeatCustom"]');
+    let repeatCustomOpen = false;
     const quietEnabledEl = container.querySelector('[data-isa="quietEnabled"]');
     const quietStartEl = container.querySelector('[data-isa="quietStart"]');
     const quietEndEl = container.querySelector('[data-isa="quietEnd"]');
@@ -847,8 +857,13 @@
       muteTimer = muted ? setTimeout(render, Math.min(Number(state.isaAlertMuteUntil) - Date.now() + 500, 2 ** 31 - 1)) : null;
       if (compact) return;
       repeatEl.checked = state.isaAlertRepeat === true;
-      repeatMinutesEl.value = String(REPEAT_MINUTES.includes(state.isaAlertRepeatMinutes) ? state.isaAlertRepeatMinutes : PACING_DEFAULTS.isaAlertRepeatMinutes);
+      const minutes = validRepeatMinutes(state.isaAlertRepeatMinutes) ? state.isaAlertRepeatMinutes : PACING_DEFAULTS.isaAlertRepeatMinutes;
+      const custom = repeatCustomOpen || !REPEAT_MINUTES.includes(minutes);
+      repeatMinutesEl.value = custom ? 'custom' : String(minutes);
       repeatMinutesEl.disabled = !repeatEl.checked;
+      repeatCustomRowEl.hidden = !custom;
+      repeatCustomEl.disabled = !repeatEl.checked;
+      if (document.activeElement !== repeatCustomEl) repeatCustomEl.value = String(minutes);
       quietEnabledEl.checked = state.isaAlertQuietEnabled === true;
       if (document.activeElement !== quietStartEl) quietStartEl.value = state.isaAlertQuietStart || '';
       if (document.activeElement !== quietEndEl) quietEndEl.value = state.isaAlertQuietEnd || '';
@@ -887,7 +902,28 @@
 
     if (!compact) {
       repeatEl.addEventListener('change', () => save({ [PACING_KEYS.repeat]: repeatEl.checked }));
-      repeatMinutesEl.addEventListener('change', () => save({ [PACING_KEYS.repeatMinutes]: Number(repeatMinutesEl.value) }));
+      repeatMinutesEl.addEventListener('change', () => {
+        repeatCustomEl.removeAttribute('aria-invalid');
+        if (repeatMinutesEl.value === 'custom') {
+          repeatCustomOpen = true;
+          showStatus('');
+          render();
+          return;
+        }
+        repeatCustomOpen = false;
+        save({ [PACING_KEYS.repeatMinutes]: Number(repeatMinutesEl.value) });
+      });
+      repeatCustomEl.addEventListener('change', () => {
+        const text = repeatCustomEl.value.trim();
+        const minutes = /^\d{1,2}$/.test(text) ? Number(text) : NaN;
+        if (!validRepeatMinutes(minutes)) {
+          showStatus('Enter a whole number of minutes from 1 to 60.');
+          repeatCustomEl.setAttribute('aria-invalid', 'true');
+          return;
+        }
+        repeatCustomEl.removeAttribute('aria-invalid');
+        save({ [PACING_KEYS.repeatMinutes]: minutes });
+      });
       quietEnabledEl.addEventListener('change', () => save({ [PACING_KEYS.quietEnabled]: quietEnabledEl.checked }));
       [[quietStartEl, PACING_KEYS.quietStart], [quietEndEl, PACING_KEYS.quietEnd]].forEach(([input, key]) => {
         input.addEventListener('change', () => {
