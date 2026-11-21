@@ -98,6 +98,11 @@
     .isa-alert-summary p { margin: 0 0 4px; }
     .isa-alert-summary strong { color: var(--ink, #14181f); }
     .isa-alert-summary summary { cursor: pointer; min-height: 24px; }
+    .isa-alert-summary .isa-alert-change {
+      min-height: 24px; padding: 0; border: 0; background: none; cursor: pointer;
+      font: inherit; font-weight: 700; color: var(--link, var(--accent, #1d4ed8)); text-decoration: underline;
+    }
+    .isa-alert-summary .isa-alert-change:focus-visible { outline: 2px solid var(--accent, #1d4ed8); outline-offset: 2px; }
     .isa-alert-summary .isa-alert-names { max-height: 72px; overflow: auto; overflow-wrap: anywhere; }
     .isa-alert-settings[data-isa-mode="expanded"] {
       max-width: none; margin: 0; padding: 0;
@@ -199,7 +204,7 @@
     }
     .isa-alert-pacing .isa-alert-mute-button:hover { border-color: var(--ink-muted, #5b6472); }
     .isa-alert-pacing .isa-alert-quiet { display: flex; gap: 12px; align-items: center; margin: 4px 0 8px; font-size: 13px; color: var(--ink, #14181f); }
-    .isa-alert-pacing .isa-alert-quiet input {
+    .isa-alert-pacing .isa-alert-quiet input, .isa-alert-pacing .isa-alert-quiet select {
       width: 64px; min-height: 32px; padding: 4px 8px; border: 1px solid var(--hairline, #e2e6ec); border-radius: 8px;
       background: var(--surface, #ffffff); color: var(--ink, #14181f); font-variant-numeric: tabular-nums;
     }
@@ -502,6 +507,21 @@
       names.textContent = on.length ? on.join(', ') : 'None';
       heading.appendChild(names);
       heading.className = 'isa-alert-names';
+      const change = document.createElement('button');
+      change.type = 'button';
+      change.className = 'isa-alert-change';
+      change.textContent = 'Change';
+      change.setAttribute('aria-label', `Change ${platform.compactHeading} selection in Settings`);
+      change.addEventListener('click', () => {
+        const failed = () => setStorageStatus('Could not open Settings. Try again.');
+        try {
+          chrome.runtime.sendMessage({ type: 'open-preview', section: 'settings' }, () => {
+            if (chrome.runtime.lastError) failed();
+          });
+        } catch (error) {
+          failed();
+        }
+      });
       summary.appendChild(heading);
       if (off.length) {
         const details = document.createElement('details');
@@ -514,6 +534,7 @@
         details.append(title, list);
         summary.appendChild(details);
       }
+      summary.appendChild(change);
     }
 
     function applyEnabledUi() {
@@ -739,6 +760,7 @@
 
   const PACING_KEYS = {
     repeat: 'isaAlertRepeat',
+    repeatMinutes: 'isaAlertRepeatMinutes',
     muteUntil: 'isaAlertMuteUntil',
     quietEnabled: 'isaAlertQuietEnabled',
     quietStart: 'isaAlertQuietStart',
@@ -746,12 +768,14 @@
   };
   const PACING_DEFAULTS = {
     isaAlertRepeat: false,
+    isaAlertRepeatMinutes: 3,
     isaAlertMuteUntil: 0,
     isaAlertQuietEnabled: false,
     isaAlertQuietStart: '22:00',
     isaAlertQuietEnd: '07:00'
   };
   const MUTE_MINUTES = [15, 30, 60];
+  const REPEAT_MINUTES = [1, 2, 3, 5, 10];
   const CLOCK_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
   const PACING_SAVE_FAILED = 'Could not save this setting. Try again.';
 
@@ -778,9 +802,13 @@
         <span>Repeat and quiet time</span>
       </label>
       <label class="isa-alert-toggle isa-alert-pacing-row">
-        <span>Ring again every 3 minutes until I look, up to 3 times</span>
+        <span>Ring again until I look, up to 3 times</span>
         <input type="checkbox" role="switch" data-isa="repeat">
       </label>
+      <div class="isa-alert-quiet">
+        <label>Ring again every <select data-isa="repeatMinutes" aria-label="Minutes between repeat rings">${REPEAT_MINUTES.map(minutes =>
+          `<option value="${minutes}">${minutes} min</option>`).join('')}</select></label>
+      </div>
       <label class="isa-alert-toggle isa-alert-pacing-row">
         <span>Quiet hours</span>
         <input type="checkbox" role="switch" data-isa="quietEnabled">
@@ -799,6 +827,7 @@
     const muteButtonsEl = container.querySelector('[data-isa="muteButtons"]');
     const unmuteEl = container.querySelector('[data-isa="unmute"]');
     const repeatEl = container.querySelector('[data-isa="repeat"]');
+    const repeatMinutesEl = container.querySelector('[data-isa="repeatMinutes"]');
     const quietEnabledEl = container.querySelector('[data-isa="quietEnabled"]');
     const quietStartEl = container.querySelector('[data-isa="quietStart"]');
     const quietEndEl = container.querySelector('[data-isa="quietEnd"]');
@@ -818,6 +847,8 @@
       muteTimer = muted ? setTimeout(render, Math.min(Number(state.isaAlertMuteUntil) - Date.now() + 500, 2 ** 31 - 1)) : null;
       if (compact) return;
       repeatEl.checked = state.isaAlertRepeat === true;
+      repeatMinutesEl.value = String(REPEAT_MINUTES.includes(state.isaAlertRepeatMinutes) ? state.isaAlertRepeatMinutes : PACING_DEFAULTS.isaAlertRepeatMinutes);
+      repeatMinutesEl.disabled = !repeatEl.checked;
       quietEnabledEl.checked = state.isaAlertQuietEnabled === true;
       if (document.activeElement !== quietStartEl) quietStartEl.value = state.isaAlertQuietStart || '';
       if (document.activeElement !== quietEndEl) quietEndEl.value = state.isaAlertQuietEnd || '';
@@ -856,6 +887,7 @@
 
     if (!compact) {
       repeatEl.addEventListener('change', () => save({ [PACING_KEYS.repeat]: repeatEl.checked }));
+      repeatMinutesEl.addEventListener('change', () => save({ [PACING_KEYS.repeatMinutes]: Number(repeatMinutesEl.value) }));
       quietEnabledEl.addEventListener('change', () => save({ [PACING_KEYS.quietEnabled]: quietEnabledEl.checked }));
       [[quietStartEl, PACING_KEYS.quietStart], [quietEndEl, PACING_KEYS.quietEnd]].forEach(([input, key]) => {
         input.addEventListener('change', () => {

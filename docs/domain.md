@@ -101,9 +101,9 @@ Watched inboxes, settled counts, notifications and sounds. See [architecture](ar
 
 Source: `src/intercom-alerts-ui.js`, `src/alert-sounds.js`, `src/alert-settings-ui.js`, `src/shared-runtime.js` (`createAlertPacing`, `isaAlertsMuted`, `isaInQuietHours`), `src/background.js` (`recordAlertHistory`, `recordAlertRepeat`, `markAlertHistorySeen`, `focusAlertHistoryTab`), `src/popup.js`.
 
-Each `inbox-alert` message is appended to `isaAlertHistory` in `chrome.storage.local` (newest 50), before the desktop-notification guard, so a ring with pop-ups turned off is still listed. An entry holds the inbox label, the count and the team id, never a tab id or customer data. Opening the popup marks all seen, and the toolbar icon shows the unseen count. A row click only brings an open Intercom tab to the front; it never navigates. The history is not in the settings export.
+Each `inbox-alert` message is appended to `isaAlertHistory` in `chrome.storage.local` (newest 50), before the desktop-notification guard, so a ring with pop-ups turned off is still listed. An entry holds the inbox label, the count and the team id, never a tab id or customer data. Opening the popup marks all seen, and the toolbar icon shows the unseen count. A row click only brings an open Intercom tab to the front; it never navigates. The compact alert summary in the popup ends with a Change button that opens the workspace Settings section. The history is not in the settings export.
 
-Repeat until seen, the mute timer and quiet hours (`mountPacing` in `src/alert-settings-ui.js`, `#isa-alert-pacing`) use the global keys `isaAlertRepeat`, `isaAlertMuteUntil`, `isaAlertQuietEnabled`, `isaAlertQuietStart`, `isaAlertQuietEnd`. A ring arms its team id; each pass hands the pacing the inboxes still unseen, and an inbox missing once is acknowledged for good, so only a new rise re-arms it. Repeats come 3 minutes apart, 3 at most, on the existing blink timer. While muted or in quiet hours a ring makes no sound and no pop-up, but is sent with `muted: true` and listed; a repeat due while muted is dropped without using one up. A repeat is sent with `repeat: n` and updates the existing history row (`rings`) instead of adding one.
+Repeat until seen, the mute timer and quiet hours (`mountPacing` in `src/alert-settings-ui.js`, `#isa-alert-pacing`) use the global keys `isaAlertRepeat`, `isaAlertRepeatMinutes`, `isaAlertMuteUntil`, `isaAlertQuietEnabled`, `isaAlertQuietStart`, `isaAlertQuietEnd`. A ring arms its team id; each pass hands the pacing the inboxes still unseen, and an inbox missing once is acknowledged for good, so only a new rise re-arms it. Repeats come `isaAlertRepeatMinutes` apart (1, 2, 3, 5 or 10; anything else counts as 3), 3 at most, on the existing blink timer. While muted or in quiet hours a ring makes no sound and no pop-up, but is sent with `muted: true` and listed; a repeat due while muted is dropped without using one up. A repeat is sent with `repeat: n` and updates the existing history row (`rings`) instead of adding one.
 
 Tests:
 
@@ -125,6 +125,8 @@ Tests:
 - `test/intercom/inbox-alert.test.js`
 - `test/ui/alert-pacing-settings.test.js`
 - `test/ui/alert-pacing.test.js`
+- `test/ui/alert-repeat-interval.test.js`
+- `test/ui/alert-summary-change-link.test.js`
 - `test/ui/alert-settings-ui-labels-hint.test.js`
 - `test/ui/alert-settings-ui-seed-filter-summary.test.js`
 - `test/ui/alert-settings-ui-sync-and-test.test.js`

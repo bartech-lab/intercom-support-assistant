@@ -18,6 +18,7 @@
     { key: 'isaDebug', type: 'boolean' },
     { key: 'isaPauseAutomaticNoteCleanup', type: 'boolean' },
     { key: 'isaAlertRepeat', type: 'boolean' },
+    { key: 'isaAlertRepeatMinutes', type: 'number' },
     { key: 'isaAlertQuietEnabled', type: 'boolean' },
     { key: 'isaAlertQuietStart', type: 'string' },
     { key: 'isaAlertQuietEnd', type: 'string' }
@@ -262,6 +263,7 @@
 
   function validBackupValue(type, value) {
     if (type === 'boolean') return typeof value === 'boolean';
+    if (type === 'number') return typeof value === 'number' && Number.isFinite(value);
     if (type === 'string') return typeof value === 'string' || value === null;
     if (type === 'strings') return Array.isArray(value) && value.every(entry => typeof entry === 'string');
     return false;

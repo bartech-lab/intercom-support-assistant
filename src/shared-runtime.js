@@ -283,17 +283,23 @@ function isaShowAnchoredNotice(anchor, { title, body }) {
 
 const ISA_ALERT_PACING_KEYS = {
   repeat: 'isaAlertRepeat',
+  repeatMinutes: 'isaAlertRepeatMinutes',
   muteUntil: 'isaAlertMuteUntil',
   quietEnabled: 'isaAlertQuietEnabled',
   quietStart: 'isaAlertQuietStart',
   quietEnd: 'isaAlertQuietEnd'
 };
-const ISA_ALERT_REPEAT_MS = 3 * 60 * 1000;
+const ISA_ALERT_REPEAT_MINUTES = [1, 2, 3, 5, 10];
+const ISA_ALERT_REPEAT_DEFAULT_MINUTES = 3;
 const ISA_ALERT_REPEAT_MAX = 3;
 
 function isaClockMinutes(text) {
   const match = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(String(text || ''));
   return match ? Number(match[1]) * 60 + Number(match[2]) : null;
+}
+
+function isaAlertRepeatMs(minutes) {
+  return (ISA_ALERT_REPEAT_MINUTES.includes(minutes) ? minutes : ISA_ALERT_REPEAT_DEFAULT_MINUTES) * 60000;
 }
 
 function isaInQuietHours(quietHours, date) {
@@ -310,11 +316,12 @@ function isaAlertsMuted(pacing, now) {
 }
 
 function createAlertPacing({ now, onRepeat }) {
-  const pacing = { repeat: false, muteUntil: 0, quietHours: { enabled: false, start: '', end: '' } };
+  const pacing = { repeat: false, repeatMs: isaAlertRepeatMs(), muteUntil: 0, quietHours: { enabled: false, start: '', end: '' } };
   const armed = new Map();
 
   function apply(values) {
     if (ISA_ALERT_PACING_KEYS.repeat in values) pacing.repeat = values[ISA_ALERT_PACING_KEYS.repeat] === true;
+    if (ISA_ALERT_PACING_KEYS.repeatMinutes in values) pacing.repeatMs = isaAlertRepeatMs(values[ISA_ALERT_PACING_KEYS.repeatMinutes]);
     if (ISA_ALERT_PACING_KEYS.muteUntil in values) pacing.muteUntil = Number(values[ISA_ALERT_PACING_KEYS.muteUntil]) || 0;
     if (ISA_ALERT_PACING_KEYS.quietEnabled in values) pacing.quietHours.enabled = values[ISA_ALERT_PACING_KEYS.quietEnabled] === true;
     if (ISA_ALERT_PACING_KEYS.quietStart in values) pacing.quietHours.start = values[ISA_ALERT_PACING_KEYS.quietStart] || '';
@@ -326,6 +333,7 @@ function createAlertPacing({ now, onRepeat }) {
     try {
       storage.get({
         [ISA_ALERT_PACING_KEYS.repeat]: false,
+        [ISA_ALERT_PACING_KEYS.repeatMinutes]: ISA_ALERT_REPEAT_DEFAULT_MINUTES,
         [ISA_ALERT_PACING_KEYS.muteUntil]: 0,
         [ISA_ALERT_PACING_KEYS.quietEnabled]: false,
         [ISA_ALERT_PACING_KEYS.quietStart]: '',
@@ -363,7 +371,7 @@ function createAlertPacing({ now, onRepeat }) {
       return;
     }
     armed.forEach((ring, key) => {
-      if (now() - ring.lastAt < ISA_ALERT_REPEAT_MS) return;
+      if (now() - ring.lastAt < pacing.repeatMs) return;
       ring.lastAt = now();
       if (muted()) return;
       ring.repeats += 1;
