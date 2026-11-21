@@ -106,6 +106,7 @@ Tests:
 - `test/background/alert-sounds.test.js`
 - `test/background/background-alert-notification-edges.test.js`
 - `test/background/sound-blocked-notice.test.js`
+- `test/ui/isa-tokens.test.js`
 - `test/intercom/alert-visuals-edges.test.js`
 - `test/intercom/alert-visuals.test.js`
 - `test/intercom/boot-alerts-and-middle-click.test.js`

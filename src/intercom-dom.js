@@ -21,6 +21,7 @@ function getIntercomRoots() {
 }
 
 function injectStyleOnce(styleId, css, shadowCss = css) {
+  isaEnsureTokens();
   if (document.head && !document.getElementById(styleId)) {
     const style = createOwnElement('style');
     style.id = styleId;

@@ -42,6 +42,80 @@ function pageBackgroundIsLight() {
   return false;
 }
 
+const ISA_TOKEN_STYLE_ID = 'isa-tokens-style';
+const ISA_THEME_ATTRIBUTE = 'data-isa-theme';
+const ISA_INTERCOM_HOST = 'app.intercom.com';
+const ISA_TOKENS_LIGHT = {
+  ink: '#14181f',
+  'ink-muted': '#5b6472',
+  surface: '#ffffff',
+  'surface-2': '#f7f8fa',
+  hairline: '#e2e6ec',
+  accent: '#1d4ed8',
+  'accent-ink': '#ffffff',
+  block: '#c92a16',
+  'block-ink': '#ffffff',
+  warn: '#b45309',
+  'warn-ink': '#ffffff',
+  ok: '#1a7f4b',
+  shadow: 'rgba(15, 23, 42, 0.18)'
+};
+const ISA_TOKENS_DARK = {
+  ink: '#e7eaef',
+  'ink-muted': '#9aa4b2',
+  surface: '#171a20',
+  'surface-2': '#1e222b',
+  hairline: '#272c36',
+  accent: '#7aa2ff',
+  'accent-ink': '#14181f',
+  block: '#ff6a52',
+  'block-ink': '#14181f',
+  warn: '#fbbf24',
+  'warn-ink': '#14181f',
+  ok: '#6ee7a8',
+  shadow: 'rgba(0, 0, 0, 0.4)'
+};
+
+function isaTokenDeclarations(tokens) {
+  return Object.keys(tokens).map(name => `--isa-${name}: ${tokens[name]};`).join(' ');
+}
+
+function isaTokenCss() {
+  return `:root { ${isaTokenDeclarations(ISA_TOKENS_LIGHT)} } ` +
+    `:root[${ISA_THEME_ATTRIBUTE}="dark"] { ${isaTokenDeclarations(ISA_TOKENS_DARK)} }`;
+}
+
+function isaHostTheme() {
+  if (window.location.host === ISA_INTERCOM_HOST) {
+    return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+  }
+  return pageBackgroundIsLight() ? 'light' : 'dark';
+}
+
+function isaApplyHostTheme() {
+  const theme = isaHostTheme();
+  const root = document.documentElement;
+  if (root.getAttribute(ISA_THEME_ATTRIBUTE) !== theme) root.setAttribute(ISA_THEME_ATTRIBUTE, theme);
+  return theme;
+}
+
+let isaThemeObserver = null;
+
+function isaEnsureTokens() {
+  if (!document.head) return;
+  if (!document.getElementById(ISA_TOKEN_STYLE_ID)) {
+    const style = document.createElement('style');
+    style.id = ISA_TOKEN_STYLE_ID;
+    style.setAttribute('data-isa-own', '');
+    style.textContent = isaTokenCss();
+    document.head.appendChild(style);
+  }
+  isaApplyHostTheme();
+  if (isaThemeObserver || typeof MutationObserver !== 'function') return;
+  isaThemeObserver = new MutationObserver(isaApplyHostTheme);
+  isaThemeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'style'] });
+}
+
 function showSoundBlockedNotice() {
   if (!document.body || document.getElementById(SOUND_BLOCKED_NOTICE_ID)) return;
 
