@@ -2,7 +2,7 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { loadExtension } = require('../support/helpers');
+const { loadExtension, recordCloseNotices } = require('../support/helpers');
 const fx = require('../support/fixtures');
 
 test('getVisibleTeamInboxName reads the Team Inbox sidebar row', () => {
@@ -256,9 +256,8 @@ test('modern shadow-root close click is blocked before the button handler runs',
   const button = win.document.querySelector('#teammate-app-react').shadowRoot.querySelector(
     'button[data-test-state-multiselect-close="true"]'
   );
-  const alerts = [];
   let closeHandlerRan = false;
-  win.alert = message => alerts.push(message);
+  const alerts = recordCloseNotices(win);
   button.addEventListener('click', () => { closeHandlerRan = true; });
 
   const event = new win.MouseEvent('click', { bubbles: true, cancelable: true, composed: true });
@@ -379,8 +378,7 @@ test('close click is blocked when the last part is a linked note; snooze is not'
       noteHtml: '<p><a href="https://example.slack.com/archives/C1/p1">slack</a></p>'
     })
   }));
-  const alerts = [];
-  win.alert = message => alerts.push(message);
+  const alerts = recordCloseNotices(win);
 
   const doc = win.document;
   const clickOn = button => {
@@ -411,8 +409,7 @@ test('close click stays blocked by the in-progress guard (message urgent)', () =
       noteHtml: '<p><a href="https://example.slack.com/archives/C1/p1">slack</a></p>'
     })
   }));
-  const alerts = [];
-  win.alert = message => alerts.push(message);
+  const alerts = recordCloseNotices(win);
 
   const closeButton = win.document.querySelector('svg.o__standard__close-conversation').closest('button');
   const event = new win.MouseEvent('click', { bubbles: true, cancelable: true });
@@ -735,8 +732,7 @@ test('Close buttons outside the conversation toolbar and header are never blocke
       '<div class="bulk-actions"><button id="bulk-close" data-test-state-multiselect-close="true" aria-label="Close">Close</button></div>',
     sidebar: inProgressAttrs()
   }));
-  const alerts = [];
-  win.alert = message => alerts.push(message);
+  const alerts = recordCloseNotices(win);
 
   const toolbarClick = new win.MouseEvent('click', { bubbles: true, cancelable: true });
   win.document.querySelector('svg.o__standard__close-conversation').closest('button').dispatchEvent(toolbarClick);

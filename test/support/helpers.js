@@ -294,7 +294,19 @@ function loadCapture(filePath, options = {}) {
   return { window, meta };
 }
 
+function recordCloseNotices(win) {
+  const notices = [];
+  const show = win.isaShowAnchoredNotice;
+  win.alert = () => { throw new Error('the browser alert box must not be used'); };
+  win.isaShowAnchoredNotice = (anchor, content) => {
+    notices.push(content.body);
+    return show(anchor, content);
+  };
+  return notices;
+}
+
 module.exports = {
+  recordCloseNotices,
   INTERCOM_LANGUAGE_SCRIPTS,
   unrefWindowTimers,
   loadExtension,

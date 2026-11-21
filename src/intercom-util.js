@@ -407,8 +407,9 @@ const TIMING = {
 const IN_PROGRESS_HIGHLIGHT_CLASS = 'isa-in-progress-highlight';
 const IN_PROGRESS_STYLE_ID = 'isa-in-progress-highlight-style';
 const ASSIGN_SUPPRESS_CLASS = 'isa-assigning';
-const IN_PROGRESS_BLOCK_MESSAGE = 'You can\'t close the ticket while the "Escalation Status" attribute is "In Progress"';
-const NOTE_LINK_BLOCK_MESSAGE = 'You can\'t close the ticket: the last message is an internal note with a Slack, Jira, or Linear link. Snooze it instead';
+const CLOSE_BLOCK_TITLE = 'Can\'t close yet';
+const IN_PROGRESS_BLOCK_MESSAGE = 'The "Escalation Status" attribute is "In Progress". Change it, then close.';
+const NOTE_LINK_BLOCK_MESSAGE = 'The last message is an internal note with a Slack, Jira, or Linear link. Snooze the ticket instead.';
 const TRACKER_LINK_PATTERN = /slack\.com|atlassian\.net|jira|linear\.app/i;
 
 const LANG_ENGLISH_WORDS = ['the', 'and', 'you', 'that', 'was', 'for', 'are', 'with', 'his', 'they', 'this', 'have', 'from', 'word', 'what', 'said', 'each', 'which', 'she', 'how', 'their', 'will', 'about', 'could', 'other', 'after', 'first', 'these', 'want', 'way', 'many', 'use', 'her', 'make', 'like', 'into', 'him', 'has', 'two', 'more', 'very', 'know', 'just', 'also', 'back', 'than', 'only', 'those', 'come', 'day', 'most', 'us', 'is', 'it', 'to', 'of', 'in', 'a', 'on', 'at', 'by', 'as', 'or', 'if', 'be', 'do', 'go', 'get', 'see', 'can', 'say', 'all', 'now', 'my', 'me', 'we', 'he', 'so', 'no', 'up', 'out', 'down', 'over', 'under', 'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where', 'why', 'any', 'both', 'few', 'some', 'such', 'own', 'same', 'too', 'but', 'not', 'yes', 'hello', 'hi', 'thanks', 'thank', 'please', 'dear', 'regards', 'best', 'package', 'shipping', 'order', 'delivery', 'parcel', 'help', 'support', 'customer', 'team', 'message', 'email', 'contact'];

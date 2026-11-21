@@ -83,7 +83,7 @@ Tests:
 
 ## Close safeguards
 
-Blocking Close while work is still in progress elsewhere. See [architecture](architecture.md#close-safeguards).
+Blocking Close while work is still in progress elsewhere. See [architecture](architecture.md#close-safeguards). A blocked close shows an in-page notice by the Close button (`isaShowAnchoredNotice` in `src/shared-runtime.js`), never `window.alert`. The notice is fixed under its anchor, clamped to the viewport, dismissed by Escape or a press outside, and uses the red `--isa-block` token.
 
 Source: `src/intercom-guards.js`, with the stream fallback in `src/intercom-page-hook.js` and `src/intercom-bridge.js`.
 
@@ -224,6 +224,7 @@ Tests:
 
 - `test/intercom/anchor-health.test.js`
 - `test/intercom/selectors.test.js`
+- `test/ui/anchored-notice.test.js`
 - `test/intercom/boot-trailing-pass.test.js`
 - `test/intercom/dom-query-fallback.test.js`
 - `test/intercom/intercom-dom-edges.test.js`

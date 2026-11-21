@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { loadExtension } = require('../support/helpers');
+const { loadExtension, recordCloseNotices } = require('../support/helpers');
 const fx = require('../support/fixtures');
 
 const CONVERSATION_ID = '900197044472625';
@@ -57,8 +57,7 @@ function closeButton(win) {
 
 function clickClose(win) {
   const button = closeButton(win);
-  const alerts = [];
-  win.alert = (message) => alerts.push(message);
+  const alerts = recordCloseNotices(win);
   const event = {
     target: button,
     defaultPrevented: false,

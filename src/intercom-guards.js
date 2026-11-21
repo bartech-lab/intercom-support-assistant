@@ -178,6 +178,6 @@ function handleCloseGuardClick(event) {
     event.preventDefault();
     event.stopPropagation();
     if (event.stopImmediatePropagation) event.stopImmediatePropagation();
-    window.alert(message);
+    isaShowAnchoredNotice(button, { title: CLOSE_BLOCK_TITLE, body: message });
   }, 'handleCloseGuardClick');
 }

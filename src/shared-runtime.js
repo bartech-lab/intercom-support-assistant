@@ -201,6 +201,86 @@ function buildFaviconBadge(total) {
   }
 }
 
+const ISA_ANCHORED_NOTICE_ID = 'isa-anchored-notice';
+const ISA_ANCHORED_NOTICE_WIDTH = 300;
+const ISA_ANCHORED_NOTICE_GAP = 8;
+const ISA_ANCHORED_NOTICE_STYLE = {
+  position: 'fixed',
+  zIndex: '2147483000',
+  boxSizing: 'border-box',
+  width: `${ISA_ANCHORED_NOTICE_WIDTH}px`,
+  maxWidth: 'calc(100vw - 16px)',
+  padding: '10px 12px',
+  border: '1px solid var(--isa-block)',
+  borderRadius: '8px',
+  background: 'var(--isa-surface)',
+  color: 'var(--isa-ink)',
+  boxShadow: '0 6px 20px var(--isa-shadow)',
+  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontSize: '13px',
+  lineHeight: '1.4',
+  textAlign: 'left',
+  whiteSpace: 'normal'
+};
+
+let isaAnchoredNoticeDismiss = null;
+
+function isaHideAnchoredNotice() {
+  if (isaAnchoredNoticeDismiss) isaAnchoredNoticeDismiss();
+}
+
+function isaAnchoredNoticePosition(anchor) {
+  const rect = anchor && typeof anchor.getBoundingClientRect === 'function' ? anchor.getBoundingClientRect() : null;
+  const width = Math.min(ISA_ANCHORED_NOTICE_WIDTH, window.innerWidth - 2 * ISA_ANCHORED_NOTICE_GAP);
+  const maxLeft = Math.max(ISA_ANCHORED_NOTICE_GAP, window.innerWidth - width - ISA_ANCHORED_NOTICE_GAP);
+  if (!rect || (!rect.width && !rect.height)) {
+    return { top: 2 * ISA_ANCHORED_NOTICE_GAP, left: Math.max(ISA_ANCHORED_NOTICE_GAP, (window.innerWidth - width) / 2) };
+  }
+  return {
+    top: rect.bottom + ISA_ANCHORED_NOTICE_GAP,
+    left: Math.min(Math.max(ISA_ANCHORED_NOTICE_GAP, rect.right - width), maxLeft)
+  };
+}
+
+function isaShowAnchoredNotice(anchor, { title, body }) {
+  isaHideAnchoredNotice();
+  if (!document.body) return null;
+  isaEnsureTokens();
+
+  const notice = document.createElement('div');
+  notice.id = ISA_ANCHORED_NOTICE_ID;
+  notice.setAttribute('data-isa-own', '');
+  notice.setAttribute('role', 'alert');
+  const heading = document.createElement('strong');
+  heading.textContent = title;
+  heading.style.display = 'block';
+  heading.style.marginBottom = '2px';
+  const text = document.createElement('span');
+  text.textContent = body;
+  notice.append(heading, text);
+
+  const position = isaAnchoredNoticePosition(anchor);
+  Object.assign(notice.style, ISA_ANCHORED_NOTICE_STYLE, { top: `${position.top}px`, left: `${position.left}px` });
+
+  const onKey = (event) => {
+    if (event.key === 'Escape') dismiss();
+  };
+  const onPointer = (event) => {
+    if (!notice.contains(event.target)) dismiss();
+  };
+  function dismiss() {
+    document.removeEventListener('keydown', onKey, true);
+    document.removeEventListener('pointerdown', onPointer, true);
+    notice.remove();
+    if (isaAnchoredNoticeDismiss === dismiss) isaAnchoredNoticeDismiss = null;
+  }
+  isaAnchoredNoticeDismiss = dismiss;
+  document.addEventListener('keydown', onKey, true);
+  document.addEventListener('pointerdown', onPointer, true);
+  document.body.appendChild(notice);
+  return notice;
+}
+
 function isaPrefersReducedMotion() {
   return typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
