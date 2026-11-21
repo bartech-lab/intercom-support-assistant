@@ -10,6 +10,8 @@ Which signature a reply gets and how its text is normalized. See [architecture](
 
 Source: `src/intercom-config.js`, `src/signature-normalizer.js`, `src/intercom-signatures.js`, `src/intercom-context.js`, `src/intercom-composer.js`, `src/signatures-data.js`.
 
+When nothing is wrong with an email reply, the status holder beside the reply box shows a quiet chip: `signed-as` (brand and signature language, for example "Brightwell, EN") or `no-signature-by-design` in an inbox that never signs. A warning always replaces it; the two never show together.
+
 Tests:
 
 - `test/intercom/composer-draft-language-reset.test.js`

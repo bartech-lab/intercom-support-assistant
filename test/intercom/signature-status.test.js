@@ -71,8 +71,14 @@ function setBody(win, options) {
   win.document.body.innerHTML = html(options);
 }
 
-function holders(win) {
+const NEUTRAL_REASONS = ['signed-as', 'no-signature-by-design'];
+
+function allHolders(win) {
   return [...win.document.querySelectorAll('.isa-signature-status')];
+}
+
+function holders(win) {
+  return allHolders(win).filter(holder => !NEUTRAL_REASONS.includes(holder.getAttribute('data-isa-signature-status')));
 }
 
 function refresh(win) {
@@ -481,4 +487,73 @@ test('the open status box follows the page theme through the shared tokens, with
     assert.ok(win.document.getElementById('isa-tokens-style'));
     assert.equal(win.document.documentElement.getAttribute('data-isa-theme'), dark ? 'dark' : 'light');
   }
+});
+
+function neutralHolder(win) {
+  win.refreshSignatureStatus();
+  const found = allHolders(win);
+  assert.equal(found.length, 1);
+  return found[0];
+}
+
+test('a reply that will be signed shows one quiet chip naming the brand and the signature language', () => {
+  const { win } = load({ teamInbox: 'Support Brightwell', brand: 'Brightwell' });
+  const holder = neutralHolder(win);
+  assert.equal(holder.getAttribute('data-isa-signature-status'), 'signed-as');
+  assert.equal(chipOf(holder).textContent, 'Brightwell, EN');
+});
+
+test('the signed-as chip follows the language picked for the reply', () => {
+  const { win } = load({ teamInbox: 'Support Brightwell', brand: 'Brightwell' });
+  neutralHolder(win);
+  win.refreshComposerLanguagePicker();
+  const german = [...win.document.querySelectorAll('.isa-draft-language-chip')].find(chip => chip.textContent === 'DE');
+  assert.ok(german, 'the language picker offers DE');
+  german.click();
+  assert.equal(chipOf(neutralHolder(win)).textContent, 'Brightwell, DE');
+});
+
+test('an inbox that never signs says so in a quiet chip, not as a warning', () => {
+  const ctx = load({ teamInbox: 'Tier 2', brand: 'Alderpoint' });
+  const holder = neutralHolder(ctx.win);
+  assert.equal(holder.getAttribute('data-isa-signature-status'), 'no-signature-by-design');
+  assert.equal(chipOf(holder).textContent, 'No signature in this inbox');
+  assert.equal(refresh(ctx.win).length, 0);
+});
+
+test('a warning takes the place of the signed-as chip instead of sitting beside it', () => {
+  const ctx = load({ teamInbox: 'Support Brightwell', brand: 'Brightwell' });
+  neutralHolder(ctx.win);
+  setBody(ctx.win, UNCLEAR);
+  settle(ctx);
+  const holder = neutralHolder(ctx.win);
+  assert.equal(holder.getAttribute('data-isa-signature-status'), 'brand-unclear');
+});
+
+test('when the brand signals agree again the warning turns into the signed-as chip in the same place', () => {
+  const ctx = showUnclear();
+  setBody(ctx.win, { teamInbox: UNCLEAR.teamInbox, brand: 'Brightwell' });
+  ctx.win.refreshSignatureStatus();
+  const holder = neutralHolder(ctx.win);
+  assert.equal(holder.getAttribute('data-isa-signature-status'), 'signed-as');
+  assert.equal(chipOf(holder).textContent, 'Brightwell, EN');
+});
+
+test('note mode and an inbox with no brand show no signed-as chip', () => {
+  const note = load({ teamInbox: 'Support Brightwell', brand: 'Brightwell', mode: 'note' });
+  note.win.refreshSignatureStatus();
+  assert.equal(allHolders(note.win).length, 0);
+  const ordinary = load({ teamInbox: 'Billing', brand: '' });
+  ordinary.win.refreshSignatureStatus();
+  assert.equal(allHolders(ordinary.win).length, 0);
+});
+
+test('the signed-as chip opens a box that says what the reply is signed as', () => {
+  const { win } = load({ teamInbox: 'Support Brightwell', brand: 'Brightwell' });
+  const holder = neutralHolder(win);
+  chipOf(holder).click();
+  const box = holder.querySelector('.isa-signature-status-box');
+  assert.ok(box);
+  assert.match(box.textContent, /This reply is signed as/);
+  assert.match(box.textContent, /Brightwell/);
 });

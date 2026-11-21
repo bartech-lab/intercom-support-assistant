@@ -70,8 +70,14 @@ function setBody(win, options) {
   win.document.body.innerHTML = html(options);
 }
 
-function holders(win) {
+const NEUTRAL_REASONS = ['signed-as', 'no-signature-by-design'];
+
+function allHolders(win) {
   return [...win.document.querySelectorAll('.isa-signature-status')];
+}
+
+function holders(win) {
+  return allHolders(win).filter(holder => !NEUTRAL_REASONS.includes(holder.getAttribute('data-isa-signature-status')));
 }
 
 function refresh(win) {

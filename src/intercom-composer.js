@@ -571,6 +571,13 @@ const SIGNATURE_STATUS_CSS = `
     outline: 2px solid var(--isa-accent);
     outline-offset: 2px;
   }
+  .${SIGNATURE_STATUS_CLASS}[${SIGNATURE_STATUS_REASON_ATTRIBUTE}="signed-as"] .${SIGNATURE_STATUS_CHIP_CLASS},
+  .${SIGNATURE_STATUS_CLASS}[${SIGNATURE_STATUS_REASON_ATTRIBUTE}="no-signature-by-design"] .${SIGNATURE_STATUS_CHIP_CLASS} {
+    background: transparent;
+    color: inherit;
+    opacity: 0.75;
+    box-shadow: inset 0 0 0 1px currentColor;
+  }
   .${SIGNATURE_STATUS_CHIP_CLASS}::before {
     content: '\\24D8\\00A0';
     font-weight: 400;
@@ -656,8 +663,38 @@ function signatureStatusTarget() {
   if (onDraft) return draftSenderStatus() || draftTeamInboxStatus();
 
   const inboxInfo = detectInboxType();
-  if (!inboxInfo || inboxInfo.type !== 'company') return null;
-  return companySignatureStatus(inboxInfo);
+  if (!inboxInfo) return null;
+
+  const problem = inboxInfo.type === 'company' ? companySignatureStatus(inboxInfo) : null;
+  return problem || signedAsSignatureStatus(inboxInfo);
+}
+
+function signedAsSignatureStatus(inboxInfo) {
+  if (inboxInfo.type === 'excluded') {
+    return {
+      reason: 'no-signature-by-design',
+      key: `no-signature-by-design:${inboxInfo.teamId || inboxInfo.name}`,
+      label: 'No signature in this inbox',
+      heading: 'No signature, on purpose',
+      detail: 'This inbox never adds a signature. Nothing is missing.',
+      link: false
+    };
+  }
+
+  const company = inboxInfo.type === 'company' ? inboxInfo.name : null;
+  const config = replySignatureConfig(inboxInfo);
+  if (!company || !config) return null;
+
+  const wanted = activeSignatureLanguage();
+  const language = config[wanted] ? wanted : 'english';
+  const code = DRAFT_LANGUAGE_CODES[language] || 'EN';
+  return {
+    reason: 'signed-as',
+    key: `signed-as:${company}:${language}`,
+    label: `${company}, ${code}`,
+    heading: 'This reply is signed as',
+    detail: `${company}, in the ${code} signature. To change the language, use the language buttons beside this chip.`
+  };
 }
 
 function settledSignatureStatus(target) {
