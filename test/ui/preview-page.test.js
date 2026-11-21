@@ -470,3 +470,21 @@ test('signatures still render when teamSignature is left out of the data entirel
   assert.equal(win.document.getElementById('content').hidden, false);
   assert.strictEqual(win.document.querySelectorAll('.company-card').length, 1);
 });
+
+test('exactly one language button is marked pressed, and it follows the click', () => {
+  const win = loadPreview();
+  win.bindLanguageSwitching();
+  const card = makeCard(win);
+  const pressed = () => [...card.querySelectorAll('.lang-tab')]
+    .filter(tab => tab.getAttribute('aria-pressed') === 'true').map(tab => tab.dataset.lang);
+  const group = card.querySelector('.language-tabs');
+
+  assert.strictEqual(group.getAttribute('role'), 'group');
+  assert.strictEqual(group.getAttribute('aria-label'), 'Signature language');
+  assert.deepStrictEqual(pressed(), ['english']);
+  assert.strictEqual(card.querySelectorAll('.lang-tab[aria-pressed="false"]').length, card.querySelectorAll('.lang-tab').length - 1);
+
+  card.querySelector('.lang-tab[data-lang="german"]').click();
+  assert.deepStrictEqual(pressed(), ['german']);
+  assert.strictEqual(card.querySelector('.lang-tab.active').dataset.lang, 'german');
+});

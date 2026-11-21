@@ -139,6 +139,8 @@ function buildCard(name, config, sectionClass) {
 
   const tabs = document.createElement('div');
   tabs.className = 'language-tabs';
+  tabs.setAttribute('role', 'group');
+  tabs.setAttribute('aria-label', 'Signature language');
 
   const preview = document.createElement('div');
   preview.className = 'signature-preview';
@@ -148,6 +150,7 @@ function buildCard(name, config, sectionClass) {
     tab.type = 'button';
     tab.className = 'lang-tab';
     if (index === 0) tab.classList.add('active');
+    tab.setAttribute('aria-pressed', index === 0 ? 'true' : 'false');
     if (!config[language] || config[language].trim() === '') tab.classList.add('empty');
     tab.dataset.lang = language;
     tab.textContent = labels[language];
@@ -202,8 +205,10 @@ function bindLanguageSwitching() {
     if (!langTab) return;
 
     const card = langTab.closest('.preview-card');
-    card.querySelectorAll('.lang-tab').forEach((item) => item.classList.remove('active'));
-    langTab.classList.add('active');
+    card.querySelectorAll('.lang-tab').forEach((item) => {
+      item.classList.toggle('active', item === langTab);
+      item.setAttribute('aria-pressed', item === langTab ? 'true' : 'false');
+    });
 
     syncCardContent(card);
   });

@@ -168,7 +168,8 @@
       background: var(--surface-2);
       border-bottom: 1px solid var(--hairline);
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-auto-flow: column;
+      grid-auto-columns: 1fr;
     }
     .lang-tab {
       background: transparent;
@@ -177,8 +178,8 @@
       cursor: pointer;
       font-size: 12px;
       font-weight: 700;
-      letter-spacing: 0.06em;
-      padding: 11px 8px;
+      padding: 11px 2px;
+      min-width: 0;
       position: relative;
     }
     .lang-tab.active { background: var(--surface); color: var(--accent); }
