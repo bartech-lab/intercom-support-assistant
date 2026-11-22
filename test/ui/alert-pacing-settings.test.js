@@ -50,7 +50,7 @@ function load({ store = {}, compact = false, failSet = false, throwSet = false, 
     }
   };
   const ctx = dom.getInternalVMContext();
-  for (const file of ['alert-sounds.js', 'alert-settings-ui.js']) {
+  for (const file of ['field-input.js', 'alert-sounds.js', 'alert-settings-ui.js']) {
     vm.runInContext(fs.readFileSync(path.join(ROOT, file), 'utf8'), ctx, { filename: file });
   }
   return { win, writes, store, listeners, doc: win.document };
@@ -425,4 +425,29 @@ test('mountPacing mounts a container that was added after load', async () => {
   env.win.ISA_ALERT_SETTINGS.mountPacing(host);
   await settled();
   assert.ok(host.querySelector('[data-isa-mute="15"]'));
+});
+
+test('typing into a quiet-hours box refuses an impossible hour digit and pads a late first digit', async () => {
+  const env = load();
+  await settled();
+  const input = q(env, '[data-isa="quietStart"]');
+  const typeInto = value => { input.value = value; input.dispatchEvent(new env.win.Event('input', { bubbles: true })); };
+  typeInto('');
+  typeInto('2');
+  typeInto('25');
+  assert.equal(input.value, '2');
+  typeInto('');
+  typeInto('7');
+  assert.equal(input.value, '07:');
+  typeInto('07:x');
+  assert.equal(input.value, '07:');
+});
+
+test('a quiet-hours time with a one-digit hour is stored zero-padded', async () => {
+  const env = load();
+  await settled();
+  change(env, '[data-isa="quietEnd"]', '7:05');
+  await settled();
+  assert.equal(env.store.isaAlertQuietEnd, '07:05');
+  assert.notEqual(q(env, '[data-isa="quietEnd"]').getAttribute('aria-invalid'), 'true');
 });

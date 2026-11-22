@@ -71,7 +71,7 @@ function load({ store = {}, mode = 'compact', failGet = false, deferGet = false,
     alertRoster: [{ teamId: '1', label: 'Urgent Northside' }, { teamId: '2', label: 'Urgent Southside' }]
   };
   const ctx = dom.getInternalVMContext();
-  for (const file of ['alert-sounds.js', 'alert-settings-ui.js']) {
+  for (const file of ['field-input.js', 'alert-sounds.js', 'alert-settings-ui.js']) {
     vm.runInContext(fs.readFileSync(path.join(ROOT, file), 'utf8'), ctx, { filename: file });
   }
   return { win, store, listeners, errors, pending, sent, doc: win.document };

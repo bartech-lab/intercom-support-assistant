@@ -792,7 +792,6 @@
   function validRepeatMinutes(minutes) {
     return Number.isInteger(minutes) && minutes >= 1 && minutes <= 60;
   }
-  const CLOCK_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
   const PACING_SAVE_FAILED = 'Could not save this setting. Try again.';
 
   function clockLabel(at) {
@@ -929,9 +928,8 @@
       if (muteCustomOpen) muteCustomEl.focus();
     });
     const muteCustom = () => {
-      const text = muteCustomEl.value.trim();
-      const minutes = /^\d{1,3}$/.test(text) ? Number(text) : 0;
-      if (minutes < 1 || minutes > 720) {
+      const minutes = window.ISA_FIELDS.wholeParse(muteCustomEl.value, 1, 720);
+      if (minutes === null) {
         showStatus('Enter a whole number of minutes from 1 to 720.');
         muteCustomEl.setAttribute('aria-invalid', 'true');
         return;
@@ -942,6 +940,7 @@
       save({ [PACING_KEYS.muteUntil]: Date.now() + minutes * 60000 });
     };
     muteCustomSetEl.addEventListener('click', muteCustom);
+    window.ISA_FIELDS.bindTyped(muteCustomEl, (previous, raw) => window.ISA_FIELDS.wholeType(raw, 3));
     muteCustomEl.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') muteCustom();
     });
@@ -959,9 +958,9 @@
         repeatCustomOpen = false;
         save({ [PACING_KEYS.repeatMinutes]: Number(repeatMinutesEl.value) });
       });
+      window.ISA_FIELDS.bindTyped(repeatCustomEl, (previous, raw) => window.ISA_FIELDS.wholeType(raw, 2));
       repeatCustomEl.addEventListener('change', () => {
-        const text = repeatCustomEl.value.trim();
-        const minutes = /^\d{1,2}$/.test(text) ? Number(text) : NaN;
+        const minutes = window.ISA_FIELDS.wholeParse(repeatCustomEl.value, 1, 60) ?? NaN;
         if (!validRepeatMinutes(minutes)) {
           showStatus('Enter a whole number of minutes from 1 to 60.');
           repeatCustomEl.setAttribute('aria-invalid', 'true');
@@ -972,10 +971,11 @@
       });
       quietEnabledEl.addEventListener('change', () => save({ [PACING_KEYS.quietEnabled]: quietEnabledEl.checked }));
       [[quietStartEl, PACING_KEYS.quietStart], [quietEndEl, PACING_KEYS.quietEnd]].forEach(([input, key]) => {
+        window.ISA_FIELDS.bindTyped(input, window.ISA_FIELDS.clockType);
         input.addEventListener('change', () => {
-          const value = input.value.trim();
-          if (!CLOCK_PATTERN.test(value)) {
-            showStatus('Enter the time as HH:MM on a 24-hour clock, for example 22:00.');
+          const value = window.ISA_FIELDS.clockParse(input.value);
+          if (!value) {
+            showStatus(window.ISA_FIELDS.CLOCK_ERROR);
             input.setAttribute('aria-invalid', 'true');
             return;
           }

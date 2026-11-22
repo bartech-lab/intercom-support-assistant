@@ -51,7 +51,7 @@ function load({ store = {}, signatureData, mode = null, failGet = false, deferGe
   };
   win.SIGNATURE_DATA = signatureData;
   const ctx = dom.getInternalVMContext();
-  for (const file of ['alert-sounds.js', 'alert-settings-ui.js']) {
+  for (const file of ['field-input.js', 'alert-sounds.js', 'alert-settings-ui.js']) {
     vm.runInContext(fs.readFileSync(path.join(ROOT, file), 'utf8'), ctx, { filename: file });
   }
   return { win, writes, store, changeListeners, pendingReads, errors };

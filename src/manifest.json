@@ -37,6 +37,7 @@
       ],
       "js": [
         "shared-runtime.js",
+        "field-input.js",
         "intercom-config.js",
         "signature-normalizer.js",
         "alert-sounds.js",

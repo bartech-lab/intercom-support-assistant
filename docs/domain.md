@@ -141,6 +141,15 @@ Tests:
 - `test/ui/popup-empty-order.test.js`
 - `test/ui/popup-alert-grouping.test.js`
 
+## Typed time, date and number fields
+
+`src/field-input.js` (`ISA_FIELDS`) gives every HH:MM, date and whole-number field the same typing rules: only digits are kept, the separator is added on its own, and a digit that would make an impossible hour, minute, day or month is refused instead of clamped. Leaving a time field pads a single-digit hour. Stored times stay zero-padded `HH:MM`. The quiet-hours, custom mute and repeat-interval fields in `src/alert-settings-ui.js` use it. It also holds `createCalendar`, the date picker used by the note controls.
+
+Tests:
+
+- `test/ui/field-input.test.js`
+- `test/ui/field-input-chromium.test.js` (real Chromium caret checks; runs only when `ISA_PLAYWRIGHT_MODULE` is set)
+
 ## Self-deleting notes
 
 Arming, the expiry footer, cleanup, and the composer control. See [architecture](architecture.md#self-deleting-notes).

@@ -67,7 +67,7 @@ function load({ store = {}, signatureData = DATA, mode = 'expanded', getResult =
   if (runtime === 'full' || runtime === 'nosend') win.chrome.runtime = { lastError: null };
   win.SIGNATURE_DATA = signatureData;
   const ctx = dom.getInternalVMContext();
-  for (const file of ['alert-sounds.js', 'alert-settings-ui.js']) {
+  for (const file of ['field-input.js', 'alert-sounds.js', 'alert-settings-ui.js']) {
     vm.runInContext(fs.readFileSync(path.join(ROOT, file), 'utf8'), ctx, { filename: file });
   }
   const panel = win.document.querySelector('#isa-alert-settings');

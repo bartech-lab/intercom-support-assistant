@@ -43,7 +43,7 @@ function load({ store = {}, compact = false } = {}) {
     }
   };
   const ctx = dom.getInternalVMContext();
-  for (const file of ['alert-sounds.js', 'alert-settings-ui.js']) {
+  for (const file of ['field-input.js', 'alert-sounds.js', 'alert-settings-ui.js']) {
     vm.runInContext(fs.readFileSync(path.join(ROOT, file), 'utf8'), ctx, { filename: file });
   }
   return { win, writes, store, doc: win.document };
@@ -187,3 +187,17 @@ for (const [name, compact] of MODES) {
     assert.equal(open(env).getAttribute('aria-expanded'), 'false');
   });
 }
+
+test('the custom mute box keeps only digits, at most three, while typing', async () => {
+  const env = load();
+  await settled();
+  open(env).click();
+  const box = input(env);
+  const typeInto = value => { box.value = value; box.dispatchEvent(new env.win.Event('input', { bubbles: true })); };
+  typeInto('1e5');
+  assert.equal(box.value, '15');
+  typeInto('-90');
+  assert.equal(box.value, '90');
+  typeInto('12345');
+  assert.equal(box.value, '123');
+});

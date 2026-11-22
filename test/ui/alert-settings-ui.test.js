@@ -61,7 +61,7 @@ function loadSettingsUi({ store = {}, signatureData = null, mode = null, failGet
     ]
   };
   const ctx = dom.getInternalVMContext();
-  const files = noSoundScript ? ['alert-settings-ui.js'] : ['alert-sounds.js', 'alert-settings-ui.js'];
+  const files = noSoundScript ? ['field-input.js', 'alert-settings-ui.js'] : ['field-input.js', 'alert-sounds.js', 'alert-settings-ui.js'];
   for (const file of files) {
     vm.runInContext(fs.readFileSync(path.join(ROOT, file), 'utf8'), ctx, { filename: file });
   }

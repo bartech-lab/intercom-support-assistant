@@ -34,6 +34,7 @@ test('the build ships the Intercom page hook as an isolated MAIN-world block', (
   assert.deepEqual(isolated.js,
     [
       'shared-runtime.js',
+      'field-input.js',
       'intercom-config.js',
       'signature-normalizer.js',
       'alert-sounds.js',

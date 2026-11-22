@@ -6,6 +6,7 @@ const { execFileSync } = require('child_process');
 const REQUIRED_FILES = [
   'manifest.json',
   'shared-runtime.js',
+  'field-input.js',
   'intercom-config.js',
   'signature-normalizer.js',
   'alert-sounds.js',
@@ -48,6 +49,7 @@ const REQUIRED_FILES = [
 
 const SCRIPT_FILES = [
   'shared-runtime.js',
+  'field-input.js',
   'intercom-config.js',
   'signature-normalizer.js',
   'alert-sounds.js',
@@ -278,6 +280,7 @@ function validateManifest(results, artifactDir) {
 
   const INTERCOM_RUNTIME_ORDER = [
     'shared-runtime.js',
+    'field-input.js',
     'intercom-config.js',
     'signature-normalizer.js',
     'alert-sounds.js',
