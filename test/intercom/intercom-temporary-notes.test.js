@@ -46,12 +46,13 @@ test('delays accept whole milliseconds from one minute through 3650 days only', 
   }
 });
 
-test('unit delays convert hours, days, and weeks, and reject fractional, negative, and unknown units', () => {
+test('unit delays convert hours and days, and reject fractional, negative, and unknown units', () => {
   const win = load();
   assert.equal(win.autoDeleteDelayFromUnits('36', 'hours'), 36 * 60 * 60 * 1000);
   assert.equal(win.autoDeleteDelayFromUnits(2, 'days'), 2 * DAY_MS);
-  assert.equal(win.autoDeleteDelayFromUnits('1', 'weeks'), 7 * DAY_MS);
-  for (const [amount, unit] of [[0, 'hours'], [1.5, 'days'], [-1, 'days'], [1, 'minutes'], [1, ''], [522, 'weeks']]) {
+  assert.equal(win.autoDeleteDelayFromUnits('1', 'weeks'), null, 'weeks is no longer a unit');
+  assert.deepEqual(Object.keys(win.ISA_TEMPORARY_NOTES.delayUnits), ['hours', 'days']);
+  for (const [amount, unit] of [[0, 'hours'], [1.5, 'days'], [-1, 'days'], [1, 'minutes'], [1, ''], [3651, 'days'], [87601, 'hours']]) {
     assert.equal(win.autoDeleteDelayFromUnits(amount, unit), null, `${amount} ${unit}`);
   }
 });

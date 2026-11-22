@@ -403,7 +403,7 @@ test('a saved auto-delete note shows one short deadline chip and hides the raw f
   assert.equal(chips[0].textContent, 'Expires 2026-09-09 07:55 UTC');
   assert.equal(chips[0].textContent.includes('ISA-AUTO-DELETE'), false, 'the marker never reaches the chip');
   assert.equal(chips[0].textContent.includes('undo'), false);
-  assert.match(chips[0].title, /local time$/);
+  assert.match(chips[0].title, /local time Click to change\.$/);
 });
 
 test('masking a note footer is idempotent and leaves an ordinary note untouched', () => {
@@ -416,7 +416,8 @@ test('masking a note footer is idempotent and leaves an ordinary note untouched'
     'repeated passes never stack chips');
   assert.equal(ordinary.querySelectorAll('.isa-temporary-note-chip').length, 0);
   assert.equal(ordinary.hasAttribute('data-isa-note-footer-owner'), false);
-  assert.equal(ordinary.textContent, 'plain note', 'an ordinary note is not rewritten');
+  assert.equal(ordinary.querySelector('p').textContent, 'plain note', 'an ordinary note is not rewritten');
+  assert.equal(ordinary.querySelectorAll('.isa-temporary-note-add').length, 1, 'it offers auto-delete once, however many passes run');
   assert.equal(win.getComputedStyle(ordinary.querySelector('p')).display !== 'none', true);
 });
 

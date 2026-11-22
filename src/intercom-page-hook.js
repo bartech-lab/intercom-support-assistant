@@ -40,6 +40,9 @@
   var TEMP_NOTE_MESSAGE_MARKER = '__isaTempNote';
   var TEMP_NOTE_CREATE_PATH = /^\/ember\/inbox\/notes$/;
   var TEMP_NOTE_FETCH_PATH = /^\/ember\/inbox\/notes$/;
+  var TEMP_NOTE_UPDATE_PATH = /^\/ember\/inbox\/notes\/(\d{1,32})$/;
+  var TEMP_NOTE_MAX_EDITS = 50;
+  var TEMP_NOTE_MAX_REPAIR_IDS = 25;
   var TEMP_NOTE_WORKSPACE_TOKEN = /^[A-Za-z0-9_-]{1,64}$/;
   var TEMP_NOTE_CONTACT_TOKEN = /^[A-Za-z0-9_-]{1,64}$/;
   var TEMP_NOTE_ID_TOKEN = /^\d{1,32}$/;
@@ -80,6 +83,7 @@
   var buffer = [];
   var listenerReady = false;
   var temporaryNoteArm = null;
+  var temporaryNoteEdits = {};
 
   function envelopeSlot(envelope) {
     if (envelope.kind === COUNTS_KIND || envelope.kind === NEXUS_KIND || envelope.kind === SELF_ADMIN_KIND) return envelope.kind;
@@ -437,6 +441,34 @@
     return notes.length ? notes : null;
   }
 
+  function repairTemporaryNotesList(failed, requestUrl, noteIds, input, init, originalFetch, thisArg) {
+    var reads = noteIds.map(function (id) {
+      var url = new URL(requestUrl.href);
+      url.searchParams.delete('ids[]');
+      url.searchParams.append('ids[]', id);
+      var target = typeof Request === 'function' && input instanceof Request ? new Request(url.href, input) : url.href;
+      return Promise.resolve(originalFetch.call(thisArg, target, init)).then(function (response) {
+        if (response.status === 404) return { notes: [], date: null };
+        if (response.status !== 200) throw new Error('repair-status');
+        return response.json().then(function (payload) {
+          if (!Array.isArray(payload)) throw new Error('repair-shape');
+          return { notes: payload, date: response.headers.get('date') };
+        });
+      });
+    });
+    return Promise.all(reads).then(function (parts) {
+      var notes = [];
+      var headers = { 'Content-Type': 'application/json' };
+      parts.forEach(function (part) {
+        notes = notes.concat(part.notes);
+        if (part.date) headers.date = part.date;
+      });
+      return new Response(JSON.stringify(notes), { status: 200, headers: headers });
+    }).catch(function () {
+      return failed;
+    });
+  }
+
   function serverDateFromResponse(response) {
     var value = response && response.headers && typeof response.headers.get === 'function'
       ? response.headers.get('date') : null;
@@ -472,11 +504,93 @@
     });
   }
 
+  function postTemporaryNoteEdit(noteId, status, reason) {
+    postTemporaryNote('temporary-note-edit', {
+      token: null,
+      revision: null,
+      noteId: noteId,
+      status: status,
+      reason: reason || null
+    });
+  }
+
+  function validTemporaryInstant(value) {
+    if (typeof value !== 'string' || !TEMP_NOTE_ISO_PATTERN.test(value)) return false;
+    var parsed = Date.parse(value);
+    return Number.isFinite(parsed) && new Date(parsed).toISOString() === value;
+  }
+
+  function temporaryNoteEditMessage(data) {
+    var noteId = data.noteId;
+    if (typeof noteId !== 'string' || !TEMP_NOTE_ID_TOKEN.test(noteId)) return;
+    if (data.kind === 'edit-forget') {
+      delete temporaryNoteEdits[noteId];
+      return;
+    }
+    var currentWorkspace = temporaryWorkspaceFromUrl(resolveUrl(window.location.href));
+    if (!validWorkspace(data.workspace) || !validContact(data.contact) || !validTemporaryToken(data.token)
+      || !validTemporaryInstant(data.expiresAt) || currentWorkspace !== data.workspace) {
+      delete temporaryNoteEdits[noteId];
+      postTemporaryNoteEdit(noteId, 'blocked', 'invalid-edit');
+      return;
+    }
+    if (!temporaryNoteEdits[noteId] && Object.keys(temporaryNoteEdits).length >= TEMP_NOTE_MAX_EDITS) {
+      postTemporaryNoteEdit(noteId, 'blocked', 'too-many-edits');
+      return;
+    }
+    temporaryNoteEdits[noteId] = {
+      workspace: data.workspace,
+      contact: data.contact,
+      token: data.token,
+      expiresAt: data.expiresAt
+    };
+    postTemporaryNoteEdit(noteId, 'kept');
+  }
+
+  function invokeTemporaryNoteUpdate(input, init, edit, noteId, originalFetch, thisArg) {
+    return temporaryNoteBody(input, init).then(function (bodyInfo) {
+      var payload = bodyInfo.supported ? temporaryNoteParsedBody(bodyInfo.text) : null;
+      var footer = temporaryNoteFooter(edit, Date.parse(edit.expiresAt));
+      if (!payload || typeof payload.body !== 'string' || !footer) {
+        temporaryNoteEdits[noteId] = edit;
+        postTemporaryNoteEdit(noteId, 'blocked', 'request-body-unreadable');
+        throw new Error('Temporary note edit could not keep its expiry');
+      }
+      if (payload.body.indexOf('[ISA-AUTO-DELETE:') !== -1) return originalFetch.call(thisArg, input, init);
+      var body = JSON.stringify(Object.assign({}, payload, {
+        body: payload.body + (payload.body ? '\n\n' : '') + footer
+      }));
+      var outgoingInit = init && typeof init === 'object' ? Object.assign({}, init, { body: body }) : { body: body };
+      return Promise.resolve(originalFetch.call(thisArg, input, outgoingInit)).then(function (response) {
+        if (!response || response.status < 200 || response.status >= 300) {
+          temporaryNoteEdits[noteId] = edit;
+          postTemporaryNoteEdit(noteId, 'failed', response ? 'http-' + response.status : 'network');
+          return response;
+        }
+        return temporaryNoteResponseMatches(response, footer, edit).then(function () {
+          postTemporaryNoteEdit(noteId, 'saved');
+          return response;
+        }, function () {
+          postTemporaryNoteEdit(noteId, 'unconfirmed', 'response-footer');
+          return response;
+        });
+      }, function (error) {
+        temporaryNoteEdits[noteId] = edit;
+        postTemporaryNoteEdit(noteId, 'failed', 'network');
+        throw error;
+      });
+    });
+  }
+
   function temporaryNoteMessage(event) {
     if (!event || event.source !== window || event.origin !== window.location.origin) return;
     var data = event.data;
     if (!data || data[TEMP_NOTE_MESSAGE_MARKER] !== true) return;
     var kind = data.kind;
+    if (kind === 'edit-keep' || kind === 'edit-forget') {
+      temporaryNoteEditMessage(data);
+      return;
+    }
     if (kind !== 'arm' && kind !== 'disarm') return;
     var workspace = data.workspace;
     var contact = data.contact;
@@ -1186,7 +1300,29 @@
       });
     }
 
+    var updateMatch = requestUrl && requestUrl.origin === window.location.origin && method === 'PUT'
+      ? TEMP_NOTE_UPDATE_PATH.exec(requestUrl.pathname) : null;
+    var edit = updateMatch && Object.prototype.hasOwnProperty.call(temporaryNoteEdits, updateMatch[1])
+      ? temporaryNoteEdits[updateMatch[1]] : null;
+    if (edit && temporaryWorkspaceFromUrl(requestUrl) === edit.workspace) {
+      delete temporaryNoteEdits[updateMatch[1]];
+      return invokeTemporaryNoteUpdate(input, init, edit, updateMatch[1], originalFetch, thisArg);
+    }
+
     var result = originalFetch.apply(this, arguments);
+
+    var listRequest = requestUrl && requestUrl.origin === window.location.origin && method === 'GET'
+      && typeof Response === 'function' ? temporaryNoteRequestInfo(requestUrl) : null;
+    if (listRequest && listRequest.noteIds.length > 0 && listRequest.noteIds.length <= TEMP_NOTE_MAX_REPAIR_IDS
+      && listRequest.noteIds.length === new Set(requestUrl.searchParams.getAll('ids[]')).size) {
+      result = Promise.resolve(result).then(function (response) {
+        if (!response || response.status !== 404) return response;
+        if (listRequest.noteIds.length === 1) {
+          return new Response('[]', { status: 200, headers: { 'Content-Type': 'application/json' } });
+        }
+        return repairTemporaryNotesList(response, requestUrl, listRequest.noteIds, input, init, originalFetch, thisArg);
+      });
+    }
 
     try {
       var isInboxesPoll = requestUrl && INBOXES_PATH.test(requestUrl.pathname);

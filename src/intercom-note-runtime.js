@@ -142,7 +142,9 @@ const noteRuntimeAdapter = {
       { app_id: context.workspaceId, 'ids[]': [noteId] }, 'GET');
     if (response.status === 404) noteRuntimeForgetNote(noteId);
     if (!response.ok) return null;
-    return noteRuntimeNote(await noteRuntimeJson(response), noteId);
+    const note = noteRuntimeNote(await noteRuntimeJson(response), noteId);
+    if (note) window.ISA_TEMPORARY_NOTES_UI?.observeServerBody?.(noteId, note.body);
+    return note;
   },
   deleteNote: async (noteId, context) => {
     const response = await noteRuntimeRequest(`/ember/notes/${noteId}`,

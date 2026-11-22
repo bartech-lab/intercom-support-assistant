@@ -107,7 +107,6 @@ test('keydown on an element other than the panel textarea is ignored in a blocke
   const other = t.win.document.createElement('textarea');
   t.win.document.body.appendChild(other);
   assertPasses(t.press({}, other));
-  assertPasses(t.press({}, t.panel.toggle));
   const inert = t.win.document.querySelectorAll('textarea[data-testid="note-input"]')[1];
   assertPasses(t.press({}, inert));
   assert.equal(t.draft().error, '');

@@ -207,6 +207,8 @@ test('both dropdowns follow a dark host surface so the native popup is not white
     assert.equal(trigger.style.background, 'rgb(28, 30, 34)');
     assert.equal(trigger.style.color, 'rgb(233, 233, 233)');
   });
+  enable(win, panel);
+  choose(win, panel, 'custom-delay');
   const layer = openMenu(win, panel.unit);
   assert.equal(layer.style.background, 'rgb(28, 30, 34)', 'our own layer carries the surface colour');
   assert.equal(layer.style.color, 'rgb(233, 233, 233)');

@@ -200,6 +200,53 @@ The dropdowns are ARIA select-only comboboxes on a fixed-position layer. A
 native `<select>` opened detached from its field, because the sidebar positions
 sections with CSS transforms that the native popup ignores.
 
+The checkbox, lifetime dropdown, custom amount and unit, date with calendar, time,
+preview and status line are built once by `createLifetimeControls` in
+`src/note-controls.js`. The composer, the change panel and the `+ Auto-delete`
+panel all use it. A date that no hour of that day could save is marked before a
+time is typed; a time earlier today, or less than a minute ahead, marks only the
+time. A hidden row is also disabled. The calendar is a fixed layer on
+`document.body` (`createCalendar` in `src/field-input.js`), because the sidebar
+section clips anything inside it. Opening a dropdown closes the calendar and the
+other way round.
+
+The controls prevent the default action of a `mousedown` on anything that is not
+a field. Intercom saves a note box when it loses focus, and a press on the label
+text would otherwise save a new note at once with no expiry. While auto-delete is
+on, a `Save note` button and Enter in any field perform the same save Intercom
+does on blur.
+
+### Editing a note that has auto-delete
+
+Intercom's inline editor (`textarea[aria-label="Edit note"]`) saves on blur with
+`PUT /ember/inbox/notes/<id>`. When it opens on a note with a valid footer, the
+panel posts `edit-keep` with the note id, token and expiry. The page hook
+remembers them, and only after it answers `kept` does the panel remove the
+footer from the textarea. On the next `PUT` for that note the hook appends a
+footer it builds itself; footer text never comes from a message. Editing never
+changes the expiry. The editor text stays hidden by a style rule until the panel
+has handled it, and shows by itself after 500 ms otherwise.
+
+The deadline line under a saved note is a button that opens a fixed panel to
+change or remove the deadline. A note without a marker gets a `+ Auto-delete`
+line that opens the same panel in add mode. `Save` reads the note, requires the
+same token, workspace and contact (or no marker when adding), rebuilds the body
+from the server's text and writes it. It counts as saved only when the response
+body equals what was sent. Two seconds after an edited note closes,
+`repairTemporaryNoteEdit` reads it back and restores the footer if a save
+dropped it.
+
+Intercom does not tell other tabs that a note changed. Each cleanup read passes
+the server body to `observeTemporaryNoteServerBody`, which shows the server's
+deadline when it differs, and an edit box that opens reads the note once before
+telling the hook what to keep.
+
+When a note is deleted in one tab, another tab may still ask for the old id list
+and get a 404 for the whole request. For a same-origin GET of 2 to 25 valid ids
+that answers 404, `repairTemporaryNotesList` in the page hook reads each id on its
+own and returns the notes that still exist. Any other failure gives the page the
+original 404. A 404 for a single id is answered with an empty list.
+
 ## Duplicate conversations
 
 A customer who sends the same request several times creates several open

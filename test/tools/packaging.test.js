@@ -35,6 +35,7 @@ test('the build ships the Intercom page hook as an isolated MAIN-world block', (
     [
       'shared-runtime.js',
       'field-input.js',
+      'note-controls.js',
       'intercom-config.js',
       'signature-normalizer.js',
       'alert-sounds.js',

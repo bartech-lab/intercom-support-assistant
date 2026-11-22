@@ -154,7 +154,7 @@ Tests:
 
 Arming, the expiry footer, cleanup, and the composer control. See [architecture](architecture.md#self-deleting-notes).
 
-Source: `src/intercom-temporary-notes.js`, `src/intercom-temporary-notes-ui.js`, `src/intercom-note-cleanup.js`, `src/intercom-note-runtime.js`.
+Source: `src/intercom-temporary-notes.js`, `src/intercom-temporary-notes-ui.js`, `src/note-controls.js` (`createLifetimeControls`), `src/intercom-note-cleanup.js`, `src/intercom-note-runtime.js`, `src/intercom-page-hook.js` (`repairTemporaryNotesList`). The panel picks light or dark colours from `isaSurfaceColor` in `src/shared-runtime.js`, the same rule as the page background check.
 
 Tests:
 
@@ -184,6 +184,22 @@ Tests:
 - `test/intercom/temporary-notes-size-limits.test.js`
 - `test/intercom/temporary-notes-value-parsing.test.js`
 - `test/support/temporary-notes-harness.js`
+- `test/intercom/note-edit-keep-expiry-hook.test.js`
+- `test/intercom/note-edit-keep-expiry-panel.test.js`
+- `test/intercom/note-expiry-add.test.js`
+- `test/intercom/note-expiry-change.test.js`
+- `test/intercom/note-stale-tab.test.js`
+- `test/intercom/notes-extension-chromium.test.js`
+- `test/intercom/notes-list-repair.test.js`
+- `test/intercom/temporary-notes-calendar-layer.test.js`
+- `test/intercom/temporary-notes-focus-guard.test.js`
+- `test/intercom/temporary-notes-lifetime.characterization.test.js`
+- `test/intercom/temporary-notes-select.characterization.test.js`
+- `test/support/lifetime-controls-forms.js`
+- `test/ui/lifetime-controls.characterization.test.js`
+- `test/ui/lifetime-controls.test.js`
+- `test/ui/note-controls-chromium.test.js`
+- `test/ui/surface-color.test.js`
 
 ## Duplicate conversations and row marks
 

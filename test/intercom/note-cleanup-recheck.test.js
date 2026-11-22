@@ -225,3 +225,59 @@ test('K10 an unusable note object during listing is skipped and the next valid e
   assert.equal(kinds(result).includes('deleted'), true);
   assert.equal(result.outcomes.some(value => value.noteId === 'note-1' && value.kind === 'deleted'), false);
 });
+
+const LATER = '2026-12-08T13:00:00.000Z';
+const EDITED = '2026-10-08T12:30:00.000Z';
+
+function edited(win, text, expiresAt) {
+  const body = expiresAt === null ? text : win.ISA_TEMPORARY_NOTES.appendFooter(text, {
+    workspaceId: WORKSPACE, contactId: CONTACT, expiresAt, token: 'token-note-1'
+  });
+  return { id: 'note-1', body, createdAt: CREATED, updatedAt: EDITED };
+}
+
+test('E1 a note whose expiry was moved later while cleanup was about to delete it is not deleted', async () => {
+  const { win, state, adapter } = single();
+  onCall(adapter, 'readNote', 2, async () => edited(win, 'temporary note', LATER));
+  const result = await ready(win, adapter).checkNow();
+  assert.deepEqual(state.deletes, []);
+  assert.equal(kinds(result).includes('deleted'), false);
+});
+
+test('E2 a note whose auto-delete was removed while cleanup was about to delete it is not deleted', async () => {
+  const { win, state, adapter } = single();
+  onCall(adapter, 'readNote', 2, async () => edited(win, 'temporary note', null));
+  const result = await ready(win, adapter).checkNow();
+  assert.deepEqual(state.deletes, []);
+  assert.equal(kinds(result).includes('deleted'), false);
+});
+
+test('E3 a note already edited to a later expiry is left alone at its old time', async () => {
+  const win = load();
+  const { state, adapter } = adapterFor({ 'note-1': edited(win, 'new text', LATER) });
+  const result = await ready(win, adapter).checkNow();
+  assert.deepEqual(state.deletes, []);
+  assert.equal(kinds(result).includes('deleted'), false);
+});
+
+test('E4 a note edited to plain text with no footer is an ordinary note and is never deleted', async () => {
+  const win = load();
+  const { state, adapter } = adapterFor({ 'note-1': edited(win, 'new text', null) });
+  await ready(win, adapter).checkNow();
+  assert.deepEqual(state.deletes, []);
+});
+
+test('E5 a note whose text was edited but keeps an expired footer is still deleted', async () => {
+  const win = load();
+  const { state, adapter } = adapterFor({ 'note-1': edited(win, 'new text after an edit', EXPIRED) });
+  const result = await ready(win, adapter).checkNow();
+  assert.deepEqual(state.deletes, ['note-1']);
+  assert.deepEqual(kinds(result), ['deleted']);
+});
+
+test('E6 a note edited to an earlier, already passed expiry is deleted', async () => {
+  const win = load();
+  const { state, adapter } = adapterFor({ 'note-1': edited(win, 'temporary note', '2026-09-20T13:00:00.000Z') });
+  await ready(win, adapter).checkNow();
+  assert.deepEqual(state.deletes, ['note-1']);
+});

@@ -9,7 +9,7 @@
   },
   "scripts": {
     "test": "node --test --test-concurrency=8 \"test/**/*.test.js\"",
-    "test:runtime": "node --test --test-concurrency=1 test/ui/hover-chromium.test.js",
+    "test:runtime": "node --test --test-concurrency=1 test/ui/hover-chromium.test.js test/ui/field-input-chromium.test.js test/ui/note-controls-chromium.test.js test/intercom/notes-extension-chromium.test.js",
     "verify": "node tools/verify-local.js",
     "leak-scan": "node scripts/leak-scan.mjs"
   },

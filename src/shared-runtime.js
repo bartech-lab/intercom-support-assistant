@@ -28,16 +28,23 @@ const SOUND_BLOCKED_NOTICE_STYLE = {
   pointerEvents: 'none'
 };
 
+
+function isaSurfaceColor(start) {
+  for (let node = start; node && node.nodeType === 1; node = node.parentElement || node.getRootNode().host || null) {
+    const match = /^rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)\s*(?:[,/]\s*([\d.]+))?\s*\)$/.exec(getComputedStyle(node).backgroundColor);
+    if (!match || (match[4] !== undefined && Number(match[4]) < 0.9)) continue;
+    const [r, g, b] = [Number(match[1]), Number(match[2]), Number(match[3])];
+    return { r, g, b, dark: (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.5 };
+  }
+  return null;
+}
+
 function pageBackgroundIsLight() {
   const corner = typeof document.elementFromPoint === 'function'
     ? document.elementFromPoint(24, Math.max(0, window.innerHeight - 24))
     : null;
-  for (let element = corner || document.body; element; element = element.parentElement || element.getRootNode().host || null) {
-    const match = /^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)$/.exec(getComputedStyle(element).backgroundColor);
-    if (!match || match[4] === '0') continue;
-    return (0.299 * match[1] + 0.587 * match[2] + 0.114 * match[3]) > 140;
-  }
-  return false;
+  const surface = isaSurfaceColor(corner || document.body);
+  return surface ? !surface.dark : false;
 }
 
 const ISA_TOKEN_STYLE_ID = 'isa-tokens-style';

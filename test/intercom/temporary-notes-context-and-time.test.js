@@ -179,13 +179,14 @@ function armSetup() {
     field.value = value;
     field.dispatchEvent(new win.Event('input', { bubbles: true }));
   };
+  const dayText = `${pad(chosen.getDate())}/${pad(chosen.getMonth() + 1)}/${chosen.getFullYear()}`;
   const last = () => posted.filter(m => m && m.__isaTempNote === true).at(-1);
-  return { win, panel, posted, day, fire, last, chosen };
+  return { win, panel, posted, day, dayText, fire, last, chosen };
 }
 
 function lifetimeFor(time, day) {
   const s = armSetup();
-  s.fire(s.panel.date, day === undefined ? s.day : day);
+  s.fire(s.panel.date, day === undefined ? s.dayText : day);
   s.posted.length = 0;
   s.fire(s.panel.time, time);
   return { s, message: s.last() };
@@ -203,10 +204,22 @@ for (const time of ['9:05', '09:05', ' 09 . 05 ', '09.05', '23:59', '0:00', '00:
   });
 }
 
-for (const time of ['24:00', '23:60', '9:5', '', '9']) {
+for (const time of ['24:00', '23:60']) {
+  test(`custom time ${JSON.stringify(time)} is refused while typing and the armed time stays`, () => {
+    const control = armSetup();
+    control.fire(control.panel.date, control.dayText);
+    control.fire(control.panel.time, '09:05');
+    assert.equal(control.last().kind, 'arm', 'control: the valid time arms');
+    control.fire(control.panel.time, time);
+    assert.equal(control.panel.time.value, '09:05');
+    assert.equal(control.last().kind, 'arm');
+  });
+}
+
+for (const time of ['9:5', '', '9']) {
   test(`custom time ${JSON.stringify(time)} is rejected and disarms`, () => {
     const control = armSetup();
-    control.fire(control.panel.date, control.day);
+    control.fire(control.panel.date, control.dayText);
     control.fire(control.panel.time, '09:05');
     assert.equal(control.last().kind, 'arm', 'control: the valid time arms');
     control.fire(control.panel.time, time);
@@ -222,11 +235,11 @@ test('custom time boundary: 23:59 arms while 24:00 disarms on the same day', () 
   assert.equal(lifetimeFor('23:59').message.lifetime.expiresAt.length, 24);
 });
 
-for (const day of ['2026-1-05', '2026-01-05x', 'x2026-01-05', '26-01-05', '']) {
+for (const day of ['', '15/03', '15/03/20', '31/02/2027', '29/02/2027']) {
   test(`custom day ${JSON.stringify(day)} gives no valid lifetime`, () => {
     const s = armSetup();
     s.fire(s.panel.time, '09:05');
-    s.fire(s.panel.date, s.day);
+    s.fire(s.panel.date, s.dayText);
     assert.equal(s.last().kind, 'arm', 'control: a valid day arms');
     s.panel.date.value = day;
     s.panel.date.dispatchEvent(new s.win.Event('input', { bubbles: true }));

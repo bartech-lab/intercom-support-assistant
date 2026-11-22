@@ -73,7 +73,7 @@ function controlsOf(win) {
     choice: controls.querySelector('[role="combobox"][aria-label="Auto-delete lifetime"]'),
     amount: controls.querySelector('input[aria-label="Auto-delete custom amount"]'),
     unit: controls.querySelector('[role="combobox"][aria-label="Auto-delete custom unit"]'),
-    date: controls.querySelector('input[aria-label="Auto-delete date"]'),
+    date: controls.querySelector('input[aria-label="Auto-delete date as DD/MM/YYYY"]'),
     time: controls.querySelector('input[aria-label="Auto-delete time, 24-hour clock"]'),
     preview: controls.querySelector('div.isa-temporary-note-preview'),
     status: controls.querySelector('div[role="status"]')
