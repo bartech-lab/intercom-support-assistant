@@ -540,7 +540,7 @@
         const details = document.createElement('details');
         details.open = wasOpen;
         const title = document.createElement('summary');
-        title.textContent = `Not selected: ${off.length} inboxes`;
+        title.textContent = `Not selected: ${off.length} ${off.length === 1 ? 'inbox' : 'inboxes'}`;
         const list = document.createElement('p');
         list.className = 'isa-alert-names';
         list.textContent = off.join(', ');

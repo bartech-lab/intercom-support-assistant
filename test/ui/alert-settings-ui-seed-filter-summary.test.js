@@ -228,3 +228,21 @@ test('C3: a group counts as selected in the compact summary when only one of its
   assert.equal(summary.querySelector('p').textContent, 'Selected: Pair');
   win.close();
 });
+
+test('C4: the compact summary counts one unselected inbox in the singular', async () => {
+  const { win } = load({
+    mode: 'compact',
+    signatureData: {
+      alertRoster: [],
+      alertGroups: [
+        { label: 'Pair', ids: ['900101', '900102'], detail: [] },
+        { label: 'Other', ids: ['900103', '900104'], detail: [] }
+      ]
+    },
+    store: { isaAlertEnabled: true, isaAlertYourInbox: true, isaAlertEnabledInboxes: ['900102'] }
+  });
+  await settled();
+  const summary = win.document.querySelector('#isa-alert-settings [data-isa="summary"]');
+  assert.equal(summary.querySelector('summary').textContent, 'Not selected: 1 inbox');
+  win.close();
+});
