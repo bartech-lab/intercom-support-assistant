@@ -280,12 +280,13 @@ test('a preset writes the page clock at save time plus the preset duration', asy
   const ui = start({ body: withFooter('server text') });
   const layer = ui.open();
   pickPreset(ui.win, layer, '1 hour');
+  ui.win.Date.now = () => NOW + 10 * 60000;
   fieldsOf(layer).save.click();
   await flush();
   assert.equal(ui.puts().length, 1);
-  const expected = `server text\n\nAuto-delete after: 2026-09-01 11:00 UTC\n${markerFor({ expires: '2026-09-01T11:00:00.000Z' })}`;
+  const expected = `server text\n\nAuto-delete after: 2026-09-01 11:10 UTC\n${markerFor({ expires: '2026-09-01T11:10:00.000Z' })}`;
   assert.equal(ui.puts()[0].body.body, expected);
-  assert.equal(ui.chip().textContent, 'Expires 2026-09-01 11:00 UTC');
+  assert.equal(ui.chip().textContent, 'Expires 2026-09-01 11:10 UTC');
 });
 
 test('saving without any change sends no write and closes the panel, even for a past deadline', async () => {

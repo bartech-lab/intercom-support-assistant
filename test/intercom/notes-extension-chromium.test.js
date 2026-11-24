@@ -11,15 +11,18 @@ const WORKSPACE = 'demo1234';
 const CONTACT = '9007c24da170bbadc8e2598d';
 const URL = `https://app.intercom.com/a/inbox/${WORKSPACE}/inbox/team/1/conversation/900401386132981`;
 const NOTE_UUID = 'aaaabbbb-cccc-4ddd-8eee-ffff0000aaaa';
-const EXPIRES = '2027-09-09T07:55:12.120Z';
-const FOOTER = `Auto-delete after: 2027-09-09 07:55 UTC\n[ISA-AUTO-DELETE:v1;workspace=${WORKSPACE};contact=${CONTACT};expires=${EXPIRES};token=${NOTE_UUID}]`;
+const EXPIRES = new Date(Date.now() + 300 * 86400000).toISOString();
+const EXPIRES_TEXT = `${EXPIRES.slice(0, 16).replace('T', ' ')} UTC`;
+const LATER = new Date(Date.now() + 400 * 86400000);
+const LATER_TYPED = `${String(LATER.getDate()).padStart(2, '0')}${String(LATER.getMonth() + 1).padStart(2, '0')}${LATER.getFullYear()}`;
+const FOOTER = `Auto-delete after: ${EXPIRES_TEXT}\n[ISA-AUTO-DELETE:v1;workspace=${WORKSPACE};contact=${CONTACT};expires=${EXPIRES};token=${NOTE_UUID}]`;
 const PAGE = `<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0;font:13px system-ui">
   <main style="height:300px">conversation</main>
   <aside data-test-conversation-details-sidebar="true" style="width:340px;background:#fff">
     <a data-test-user-profile-link="true" href="/a/apps/${WORKSPACE}/users/${CONTACT}">Customer</a>
     <div data-test-sidebar-section-item="notes" data-sidebar-section-id="notes"><div data-testid="notes-section">
       <div><textarea data-testid="note-input" placeholder="Add a note" aria-label="Add a note"></textarea></div>
-      <div data-testid="note-501"><div data-testid="note-body"><p>temporary text</p><p>Auto-delete after: 2027-09-09 07:55 UTC<br>
+      <div data-testid="note-501"><div data-testid="note-body"><p>temporary text</p><p>Auto-delete after: ${EXPIRES_TEXT}<br>
 [ISA-AUTO-DELETE:v1;workspace=${WORKSPACE};contact=${CONTACT};expires=${EXPIRES};token=${NOTE_UUID}]</p></div></div>
       <div data-testid="note-502"><div data-testid="note-body"><p>plain text</p></div></div>
     </div></div>
@@ -122,13 +125,13 @@ test.describe('Intercom notes with the real extension in Chromium', { skip: SKIP
     await page.click('[data-testid="note-501"] .isa-temporary-note-chip');
     const layer = page.locator('.isa-temporary-note-expiry-editor');
     await layer.locator('input[aria-label="Auto-delete date as DD/MM/YYYY"]').fill('');
-    await layer.locator('input[aria-label="Auto-delete date as DD/MM/YYYY"]').pressSequentially('2512' + '2027');
+    await layer.locator('input[aria-label="Auto-delete date as DD/MM/YYYY"]').pressSequentially(LATER_TYPED);
     await layer.locator('input[aria-label="Auto-delete time, 24-hour clock"]').fill('');
     await layer.locator('input[aria-label="Auto-delete time, 24-hour clock"]').pressSequentially('1830');
     await page.keyboard.press('Enter');
     await page.waitForFunction(() => !document.querySelector('.isa-temporary-note-expiry-editor'));
     assert.equal(server.puts.length, 1);
-    const expected = new Date(2027, 11, 25, 18, 30).toISOString();
+    const expected = new Date(LATER.getFullYear(), LATER.getMonth(), LATER.getDate(), 18, 30).toISOString();
     assert.equal(server.puts[0].body, `server text\n\nAuto-delete after: ${expected.slice(0, 16).replace('T', ' ')} UTC\n[ISA-AUTO-DELETE:v1;workspace=${WORKSPACE};contact=${CONTACT};expires=${expected};token=${NOTE_UUID}]`);
     assert.equal(await page.textContent('[data-testid="note-501"] .isa-temporary-note-chip'), `Expires ${expected.slice(0, 16).replace('T', ' ')} UTC`);
   });
@@ -150,7 +153,7 @@ test.describe('Intercom notes with the real extension in Chromium', { skip: SKIP
       return { shown, line: box.querySelector('.isa-temporary-note-chip')?.textContent || null, saved: (await response.json()).body };
     }, { text: `server text\n\n${FOOTER}`, workspace: WORKSPACE });
     assert.equal(result.shown, 'server text');
-    assert.equal(result.line, 'Expires 2027-09-09 07:55 UTC');
+    assert.equal(result.line, `Expires ${EXPIRES_TEXT}`);
     assert.equal(result.saved, `server text edited\n\n${FOOTER}`);
   });
 

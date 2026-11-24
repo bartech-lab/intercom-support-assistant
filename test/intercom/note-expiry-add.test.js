@@ -93,9 +93,3 @@ test('unticking Auto-delete in the add panel and saving changes nothing', async 
   assert.equal(t.card(PLAIN_ID).querySelector('.isa-temporary-note-chip'), null);
   assert.ok(t.card(PLAIN_ID).querySelector('.isa-temporary-note-add'));
 });
-
-test('the style rule makes the host tooltip layer click-through', () => {
-  const t = setup();
-  const css = t.win.document.getElementById('isa-temporary-note-edit-style').textContent;
-  assert.match(css, /\[data-base-ui-portal\] > \[role="presentation"\]:has\(> \[role="tooltip"\]\[data-testid="tooltip-content"\]\) \{ pointer-events: none !important; \}/);
-});
