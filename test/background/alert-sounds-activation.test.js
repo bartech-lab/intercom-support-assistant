@@ -188,7 +188,10 @@ test('S5: a rejected resume is swallowed and the script keeps working', async ()
   process.on('unhandledRejection', onUnhandled);
   try {
     const win = load({ resumeRejects: true, resumeChangesState: false });
-    assert.doesNotThrow(() => win.dispatchEvent(new win.Event('keydown')));
+    const errors = [];
+    win.addEventListener('error', event => errors.push(event.error));
+    win.dispatchEvent(new win.Event('keydown'));
+    assert.deepStrictEqual(errors, []);
     assert.strictEqual(win.__resumeCount, 1);
     await new Promise(resolve => setImmediate(resolve));
     await new Promise(resolve => setImmediate(resolve));

@@ -129,8 +129,8 @@ test('T5 a click on a text node or the document does not toggle or throw', () =>
   const text = win.document.getElementById('p').firstChild;
   assert.strictEqual(text.nodeType, 3);
   assert.strictEqual(typeof text.closest, 'undefined');
-  assert.doesNotThrow(() => text.dispatchEvent(new win.MouseEvent('click', { bubbles: true })));
-  assert.doesNotThrow(() => win.document.dispatchEvent(new win.MouseEvent('click', { bubbles: true })));
+  text.dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
+  win.document.dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
   assert.deepStrictEqual(errors, []);
   assert.strictEqual(theme(win), 'light');
   assert.strictEqual(win.localStorage.getItem('isaTheme'), null);
