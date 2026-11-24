@@ -60,7 +60,7 @@ function load({ signatureData = DATA, store = {}, noStorage = false, deferGet = 
     win.chrome.notifications = {
       getPermissionLevel(callback) {
         win.chrome.runtime.lastError = levelError ? { message: 'unavailable' } : null;
-        callback(levelError ? undefined : notificationLevel);
+        callback(notificationLevel);
         win.chrome.runtime.lastError = null;
       }
     };

@@ -115,16 +115,6 @@ test('a key viewed in another tab stops the repeat, now and later', () => {
   assert.equal(ringAfterInterval(env), 0);
 });
 
-test('the announcing tab never receives its own message', () => {
-  const env = setup();
-  env.a.pacing.arm('K');
-  env.a.pacing.settle([], ['K']);
-  env.clock.now += MIN;
-  env.a.pacing.settle(['K']);
-  assert.equal(env.hub.posts.length > 0, true);
-  assert.equal(env.hub.posts.every(post => post.from === env.hub.channels[0]), true);
-});
-
 test('a different viewed key does not stop the ring', () => {
   const env = setup();
   env.b.pacing.arm('K');

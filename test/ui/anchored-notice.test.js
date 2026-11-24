@@ -181,7 +181,9 @@ test('narrow viewport shrinks the width to the viewport minus sixteen', () => {
   setWidth(win, 280);
   const el = win.isaShowAnchoredNotice(anchorWithRect(win, { ...REAL, right: 5000 }), CONTENT);
   assert.equal(px(el, 'left'), 8);
-  assert.ok(px(el, 'left') + (280 - 16) <= 280 - 8);
+  const probe = win.document.createElement('div');
+  probe.style.maxWidth = 'calc(100vw - 16px)';
+  assert.equal(el.style.maxWidth, probe.style.maxWidth);
 });
 
 test('showing a second notice removes the first from the document', () => {
@@ -269,6 +271,19 @@ test('hide function can be called repeatedly with nothing shown', () => {
     win.isaHideAnchoredNotice();
     win.isaHideAnchoredNotice();
   });
+});
+
+test('dismissal removes every document listener the notice added', () => {
+  const win = load();
+  const live = new Set();
+  const add = win.document.addEventListener.bind(win.document);
+  const remove = win.document.removeEventListener.bind(win.document);
+  win.document.addEventListener = (type, fn, options) => { live.add(`${type}:${fn.name}`); add(type, fn, options); };
+  win.document.removeEventListener = (type, fn, options) => { live.delete(`${type}:${fn.name}`); remove(type, fn, options); };
+  win.isaShowAnchoredNotice(null, CONTENT);
+  assert.equal(live.size > 0, true);
+  win.document.body.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  assert.deepEqual([...live], []);
 });
 
 test('events after dismissal do not throw', () => {

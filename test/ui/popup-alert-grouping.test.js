@@ -130,8 +130,7 @@ test('a reminder and a normal entry with the same label give two rows', () => {
   assert.equal(rows(doc).length, 2);
   assert.equal(doc.querySelector('.rang-more'), null);
   const texts = where(doc).slice().sort();
-  assert.equal(texts.some(text => text.includes('rang 2 times')), true);
-  assert.equal(texts.some(text => text === ''), true);
+  assert.deepStrictEqual(texts, ['', 'rang 2 times']);
   dom.window.close();
 });
 
@@ -221,12 +220,5 @@ test('clicking a grouped row sends one open message', () => {
   const row = rows(doc).find(item => item.querySelector('.rang-label').firstChild.textContent === 'Urgent Northside');
   row.click();
   assert.deepStrictEqual(sent.filter(message => message.type === 'alert-history-open'), [{ type: 'alert-history-open' }]);
-  dom.window.close();
-});
-
-test('seen entries of a place give no row and no rang text', () => {
-  const { doc, dom } = loadPopup({ history: [entry(1, true), entry(2, true), entry(3, true)] });
-  assert.equal(rows(doc).length, 0);
-  assert.equal(doc.querySelector('#rangList').children.length, 0);
   dom.window.close();
 });

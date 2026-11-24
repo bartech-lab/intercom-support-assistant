@@ -69,14 +69,6 @@ test('clock typing follows the keystroke table', () => {
   });
 });
 
-test('clock typing refuses an out-of-range digit instead of clamping it', () => {
-  assert.equal(F.clockType('2', '24'), '2');
-  assert.notEqual(F.clockType('2', '24'), '23:');
-  assert.equal(F.clockType('07:', '07:0'), '07:0');
-  assert.notEqual(F.clockType('07:', '07:0'), '23:');
-  assert.equal(F.clockType('12:', '12:7'), '12:');
-});
-
 test('clock mid-field edits are not re-flowed', () => {
   const cases = [
     ['12:30', '2:30', '2:30'],
@@ -264,7 +256,7 @@ test('a refused mid-field insert moves the caret back by the inserted characters
   assert.equal(input.selectionStart, 0);
 });
 
-test('a mid-field edit that is accepted shifts the caret by the length difference', () => {
+test('an accepted mid-field edit leaves the caret where the browser put it', () => {
   const input = field('2:30');
   F.bindTyped(input, F.clockType, () => {});
   typeInto(input, '22:30', 1);

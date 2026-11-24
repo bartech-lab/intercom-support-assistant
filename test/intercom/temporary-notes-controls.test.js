@@ -185,6 +185,7 @@ test('the time field only accepts characters that can form HH:MM', () => {
   assert.equal(type('18:45'), '18:45');
   assert.equal(type('18:45x'), '18:45');
   assert.equal(type('18:456'), '18:45', 'the field never grows past HH:MM');
+  type('');
   assert.equal(type('1845'), '18:45', 'a complete paste without a colon is formatted');
   assert.equal(type('1:2:3'), '18:45', 'a second colon is refused');
   assert.equal(type('25:00'), '18:45', 'an impossible paste is refused');

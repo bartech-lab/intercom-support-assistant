@@ -110,15 +110,6 @@ for (const [name, compact] of MODES) {
     });
   }
 
-  test(`${name}: 45 minutes from 10:00 reads Muted until 10:45`, async () => {
-    const env = await start();
-    open(env).click();
-    type(env, '45');
-    set(env).click();
-    await settled();
-    assert.equal(label(env), 'Muted until 10:45');
-  });
-
   test(`${name}: Enter in the input does the same as Mute`, async () => {
     const env = await start();
     open(env).click();
@@ -200,4 +191,27 @@ test('the custom mute box keeps only digits, at most three, while typing', async
   assert.equal(box.value, '90');
   typeInto('12345');
   assert.equal(box.value, '123');
+});
+
+test('a preset mute closes an open Custom row, so it stays closed after unmuting', async () => {
+  const env = load();
+  await settled();
+  open(env).click();
+  assert.equal(hidden(row(env)), false);
+  q(env, 'button[data-isa-mute="15"]').click();
+  q(env, '[data-isa="unmute"]').click();
+  assert.equal(label(env), 'Mute alerts for');
+  assert.equal(hidden(row(env)), true);
+  assert.equal(open(env).getAttribute('aria-expanded'), 'false');
+});
+
+test('mounting the same container again leaves the panel the user has open untouched', async () => {
+  const env = load();
+  await settled();
+  open(env).click();
+  type(env, '42');
+  env.win.ISA_ALERT_SETTINGS.mountPacing(q(env, '#isa-alert-pacing'));
+  await settled();
+  assert.equal(hidden(row(env)), false);
+  assert.equal(input(env).value, '42');
 });

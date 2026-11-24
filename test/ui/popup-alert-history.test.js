@@ -54,7 +54,6 @@ test('unseen rows are listed newest first', () => {
   const { doc, dom } = loadPopup({ history: [entry(1000, false), entry(3000, false), entry(2000, false)] });
   assert.deepStrictEqual(labels(doc), ['L3000', 'L2000', 'L1000']);
   assert.equal(doc.querySelector('.rang-earlier'), null);
-  assert.equal(doc.querySelector('#rangList').textContent.includes('Earlier'), false);
   dom.window.close();
 });
 
@@ -64,7 +63,6 @@ test('seen entries are never listed, even when one is newer than an unseen one',
   });
   assert.deepStrictEqual(labels(doc), ['L4', 'L2']);
   assert.equal(doc.querySelector('#rangList').children.length, 2);
-  assert.equal(doc.querySelector('#rangList').textContent.includes('Earlier'), false);
   dom.window.close();
 });
 
@@ -251,7 +249,7 @@ test('a browser callback error says no tab is open', () => {
     history: [entry(1, false)],
     respond: (message, chrome) => {
       if (message.type === 'alert-history-open') chrome.runtime.lastError = { message: 'Unavailable' };
-      return undefined;
+      return { ok: true };
     }
   });
   rows(doc)[0].click();

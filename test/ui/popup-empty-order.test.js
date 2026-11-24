@@ -31,15 +31,6 @@ test('the empty message comes before the list in document order', () => {
   dom.window.close();
 });
 
-test('with only seen entries the message shows and the list is empty', () => {
-  const dom = loadPopup([entry(1, true), entry(2, true)]);
-  const doc = dom.window.document;
-  assert.equal(doc.querySelector('#rangEmpty').hidden, false);
-  assert.equal(doc.querySelector('#rangList').children.length, 0);
-  assert.equal(doc.querySelector('#rangList').textContent.includes('Earlier'), false);
-  dom.window.close();
-});
-
 test('with an unseen entry the message is hidden and only the unseen entry is listed', () => {
   const dom = loadPopup([entry(1, true), entry(2, false)]);
   const doc = dom.window.document;

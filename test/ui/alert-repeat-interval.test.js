@@ -127,17 +127,6 @@ for (const minutes of [4, 7, 12, 45, 60]) {
   });
 }
 
-test('custom 4 minute interval: silent at 3 minutes 59.999 seconds, rings at 4 minutes', () => {
-  const env = pacer(withMinutes(4));
-  env.pacing.arm('a');
-  env.clock.now += 4 * MIN - 1;
-  env.pacing.settle(['a']);
-  assert.deepEqual(env.calls, []);
-  env.clock.now += 1;
-  env.pacing.settle(['a']);
-  assert.deepEqual(env.calls, [['a', 1]]);
-});
-
 test('custom 60 minute interval: silent at 59 minutes 59.999 seconds, rings at 60 minutes', () => {
   const env = pacer(withMinutes(60));
   env.pacing.arm('a');

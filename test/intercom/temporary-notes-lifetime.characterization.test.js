@@ -33,6 +33,14 @@ function futureDay(daysAhead) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
+function nextSpringForward() {
+  for (let year = new Date().getFullYear(); ; year += 1) {
+    const day = new Date(year, 2, 31);
+    day.setDate(31 - day.getDay());
+    if (day.getTime() > Date.now() + 86400000) return `${year}-03-${day.getDate()}`;
+  }
+}
+
 test('characterization: a preset arms a relative lifetime of its own length', () => {
   const message = armed({ choice: '3600000' });
   assert.equal(message.kind, 'arm');
@@ -56,7 +64,7 @@ test('characterization: an unusable lifetime disarms instead of arming', () => {
     { choice: 'custom-delay', amount: '5', unit: 'months' },
     { choice: 'custom-date', day: '', time: '10:00' },
     { choice: 'custom-date', day: futureDay(10), time: '' },
-    { choice: 'custom-date', day: '2027-03-28', time: '02:30' },
+    { choice: 'custom-date', day: nextSpringForward(), time: '02:30' },
     { choice: 'not-a-preset' }
   ]) {
     assert.equal(armed(fields).kind, 'disarm', JSON.stringify(fields));
@@ -87,7 +95,7 @@ test('the custom date messages, one per missing or impossible part', () => {
   const clock = previewFor({ choice: 'custom-date', day, time: '' });
   assert.equal(clock.text, clock.win.ISA_FIELDS.CLOCK_ERROR);
   assert.equal(previewFor({ choice: 'custom-date', day, time: '7' }).text, clock.text);
-  assert.equal(previewFor({ choice: 'custom-date', day: '2027-03-28', time: '02:30' }).text,
+  assert.equal(previewFor({ choice: 'custom-date', day: nextSpringForward(), time: '02:30' }).text,
     'That local time does not exist on this date. Pick another time.');
   assert.equal(previewFor({ choice: 'custom-date', day: '2020-01-01', time: '10:00' }).text,
     'Pick a date between 1 minute and 3650 days from now.');
