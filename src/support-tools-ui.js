@@ -9,6 +9,10 @@
   const CAPTURE_META_ID = 'isa-capture-meta';
   const CONTEXT_META_ID = 'isa-capture-context';
 
+  const QUIET_CLOCK = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
+  const validRepeatMinutes = value => Number.isInteger(value) && value >= 1 && value <= 60;
+  const validQuietClock = value => value === '' || value === null || QUIET_CLOCK.test(value);
+
   const BACKUP_KEYS = [
     { key: 'isaAlertEnabled', type: 'boolean' },
     { key: 'isaAlertEnabledInboxes', type: 'strings' },
@@ -18,10 +22,10 @@
     { key: 'isaDebug', type: 'boolean' },
     { key: 'isaPauseAutomaticNoteCleanup', type: 'boolean' },
     { key: 'isaAlertRepeat', type: 'boolean' },
-    { key: 'isaAlertRepeatMinutes', type: 'number' },
+    { key: 'isaAlertRepeatMinutes', type: 'number', valid: validRepeatMinutes },
     { key: 'isaAlertQuietEnabled', type: 'boolean' },
-    { key: 'isaAlertQuietStart', type: 'string' },
-    { key: 'isaAlertQuietEnd', type: 'string' }
+    { key: 'isaAlertQuietStart', type: 'string', valid: validQuietClock },
+    { key: 'isaAlertQuietEnd', type: 'string', valid: validQuietClock }
   ];
 
   const DERIVED_KEYS = [
@@ -560,7 +564,7 @@
           return;
         }
         const value = payload.settings[key];
-        if (!validBackupValue(known.type, value)) {
+        if (!validBackupValue(known.type, value) || (known.valid && !known.valid(value))) {
           rejected.push(key);
           return;
         }

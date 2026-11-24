@@ -698,3 +698,42 @@ for (const bad of ['3', true, null, [3]]) {
     assert.equal(ui.store.data.local.isaAlertSound, 'chime');
   });
 }
+
+for (const bad of [0, 61, 2.5, -1, 999]) {
+  test(`an imported repeat interval of ${bad} is skipped, because the settings page would refuse it too`, async () => {
+    const ui = await loadBackup({ isaAlertRepeatMinutes: 5 });
+    await importText(ui, backupPayload({ isaAlertRepeatMinutes: bad, isaAlertSound: 'chime' }));
+    assert.equal(ui.store.data.local.isaAlertRepeatMinutes, 5);
+    assert.match(ui.pick('result').textContent, /wrong value type: isaAlertRepeatMinutes/);
+    assert.equal(ui.store.data.local.isaAlertSound, 'chime');
+  });
+}
+
+for (const good of [1, 60]) {
+  test(`an imported repeat interval of ${good} is stored`, async () => {
+    const ui = await loadBackup({ isaAlertRepeatMinutes: 5 });
+    await importText(ui, backupPayload({ isaAlertRepeatMinutes: good }));
+    assert.equal(ui.store.data.local.isaAlertRepeatMinutes, good);
+  });
+}
+
+for (const bad of ['25:99', '7:05', '24:00', 'abc', '22:00:00']) {
+  test(`an imported quiet-hours time of ${JSON.stringify(bad)} is skipped and the stored time stays`, async () => {
+    const ui = await loadBackup({ isaAlertQuietStart: '22:00', isaAlertQuietEnd: '07:00' });
+    await importText(ui, backupPayload({ isaAlertQuietStart: bad, isaAlertQuietEnd: bad, isaAlertSound: 'chime' }));
+    assert.equal(ui.store.data.local.isaAlertQuietStart, '22:00');
+    assert.equal(ui.store.data.local.isaAlertQuietEnd, '07:00');
+    assert.match(ui.pick('result').textContent, /wrong value type: isaAlertQuietStart, isaAlertQuietEnd/);
+    assert.equal(ui.store.data.local.isaAlertSound, 'chime');
+  });
+}
+
+test('imported quiet-hours times in HH:MM and empty times are stored', async () => {
+  const ui = await loadBackup({ isaAlertQuietStart: '22:00', isaAlertQuietEnd: '07:00' });
+  await importText(ui, backupPayload({ isaAlertQuietStart: '23:59', isaAlertQuietEnd: '00:00' }));
+  assert.equal(ui.store.data.local.isaAlertQuietStart, '23:59');
+  assert.equal(ui.store.data.local.isaAlertQuietEnd, '00:00');
+  await importText(ui, backupPayload({ isaAlertQuietStart: '', isaAlertQuietEnd: '' }));
+  assert.equal(ui.store.data.local.isaAlertQuietStart, '');
+  assert.equal(ui.store.data.local.isaAlertQuietEnd, '');
+});
