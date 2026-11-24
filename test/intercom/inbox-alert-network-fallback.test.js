@@ -131,6 +131,25 @@ test('networkAssigneeCount accepts string ids and skips malformed entries withou
   });
 });
 
+test('an inbox whose count is malformed reads as unknown, not 0, even when missing inboxes count as zero', () => {
+  const { window } = build();
+  frame(window, [[TEAM, 7], [555, -1], [666, 1.5], [777, '4']], { missingAsZero: true });
+  assert.equal(window.networkAssigneeCount(TEAM), 7);
+  ['555', '666', '777'].forEach(id => assert.equal(window.networkAssigneeCount(id), null, id));
+  assert.equal(window.networkAssigneeCount('999'), 0);
+});
+
+test('a frame with an entry of the wrong shape reads every missing inbox as unknown', () => {
+  const { window } = build();
+  frame(window, [[TEAM, 7], 'junk'], { missingAsZero: true });
+  assert.equal(window.networkAssigneeCount(TEAM), 7);
+  assert.equal(window.networkAssigneeCount('999'), null);
+  frame(window, [[TEAM, 7], [888]], { missingAsZero: true });
+  assert.equal(window.networkAssigneeCount('999'), null);
+  frame(window, [[TEAM, 7], ['all', 3], ['not an inbox id!', 3]], { missingAsZero: true });
+  assert.equal(window.networkAssigneeCount('999'), 0);
+});
+
 test('networkAssigneeCount is null with no frame and when the frame is older than 10 s or in the future', () => {
   const { window } = build();
   assert.equal(window.networkAssigneeCount(TEAM), null);

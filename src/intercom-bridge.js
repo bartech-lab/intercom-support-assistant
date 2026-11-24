@@ -537,15 +537,23 @@ function rememberCountersUpdated(payload, observedAt) {
   if (!data || !Array.isArray(data.counters) || data.counters.length > NETWORK_COUNTERS_MAX_ENTRIES) return;
   if (networkCounters && observedAt < networkCounters.at) return;
   const byId = new Map();
+  const unknown = new Set();
+  let wrongShape = false;
   data.counters.forEach((entry) => {
-    if (!Array.isArray(entry) || entry.length !== 2) return;
+    if (!Array.isArray(entry) || entry.length !== 2) {
+      wrongShape = true;
+      return;
+    }
     const id = String(entry[0]);
     const count = entry[1];
     if (!INTERCOM_BRIDGE_INBOX_ID_TOKEN.test(id)) return;
-    if (typeof count !== 'number' || count < 0 || count > NETWORK_INBOX_MAX_COUNT || Math.floor(count) !== count) return;
+    if (typeof count !== 'number' || count < 0 || count > NETWORK_INBOX_MAX_COUNT || Math.floor(count) !== count) {
+      unknown.add(id);
+      return;
+    }
     byId.set(id, count);
   });
-  networkCounters = { at: observedAt, byId, missingIsZero: data.treat_missing_assignees_as_zero === true };
+  networkCounters = { at: observedAt, byId, unknown, missingIsZero: data.treat_missing_assignees_as_zero === true && !wrongShape };
   if (typeof evaluateInboxAlerts === 'function') safeExecute(evaluateInboxAlerts, 'countersUpdated evaluateInboxAlerts');
 }
 
@@ -555,6 +563,7 @@ function networkAssigneeCount(id, now = Date.now()) {
   if (ageMs < 0 || ageMs > NETWORK_COUNTERS_FRESH_MS) return null;
   const key = String(id);
   if (networkCounters.byId.has(key)) return networkCounters.byId.get(key);
+  if (networkCounters.unknown.has(key)) return null;
   return networkCounters.missingIsZero ? 0 : null;
 }
 
