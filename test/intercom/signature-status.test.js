@@ -557,3 +557,34 @@ test('the signed-as chip opens a box that says what the reply is signed as', () 
   assert.match(box.textContent, /This reply is signed as/);
   assert.match(box.textContent, /Brightwell/);
 });
+
+test('the chip is fitted again when the composer footer changes width, so it stays clear of the Send side', () => {
+  const ctx = load();
+  const observers = [];
+  ctx.win.ResizeObserver = class {
+    constructor(callback) { this.callback = callback; this.targets = []; this.connected = true; observers.push(this); }
+    observe(target) { this.targets.push(target); }
+    disconnect() { this.connected = false; }
+  };
+  const [holder] = settle(ctx);
+  const host = holder.parentElement;
+  const edges = { host: 400, holderLeft: 300, holderWidth: 80 };
+  host.getBoundingClientRect = () => ({ right: edges.host });
+  holder.getBoundingClientRect = () => ({ right: edges.holderLeft + edges.holderWidth, width: edges.holderWidth });
+
+  assert.equal(observers.length, 1);
+  assert.deepEqual(observers[0].targets, [host]);
+  assert.equal(holder.style.maxWidth, '');
+
+  edges.host = 330;
+  observers[0].callback();
+  assert.equal(holder.style.maxWidth, '30px');
+
+  edges.host = 250;
+  observers[0].callback();
+  assert.equal(holder.style.maxWidth, '0px');
+
+  edges.host = 400;
+  observers[0].callback();
+  assert.equal(holder.style.maxWidth, '');
+});

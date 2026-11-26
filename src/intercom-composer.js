@@ -143,6 +143,7 @@ const SIGNATURE_STATUS_BOX_GAP_PX = 6;
 let signatureStatusPending = { key: null, since: 0 };
 let signatureStatusSettleTimer = null;
 let signatureStatusOpenHolder = null;
+let signatureStatusFitObserver = null;
 const signatureStatusTargets = new WeakMap();
 
 let draftRecipientLanguageTokens = null;
@@ -867,6 +868,16 @@ function fitSignatureStatusHolder(holder, host) {
   if (overflow > 0) holder.style.maxWidth = `${Math.max(0, Math.round(holder.getBoundingClientRect().width - overflow))}px`;
 }
 
+function watchSignatureStatusFit(holder, host) {
+  if (signatureStatusFitObserver) signatureStatusFitObserver.disconnect();
+  signatureStatusFitObserver = null;
+  if (typeof ResizeObserver !== 'function') return;
+  signatureStatusFitObserver = new ResizeObserver(() => safeExecute(() => {
+    if (holder.parentElement === host) fitSignatureStatusHolder(holder, host);
+  }, 'fitSignatureStatusHolder'));
+  signatureStatusFitObserver.observe(host);
+}
+
 function alignWithComposerActions(element, host) {
   const bar = host.parentElement;
   if (!bar || !bar.matches(SELECTORS.composerActionsBar)) return;
@@ -907,6 +918,7 @@ function refreshSignatureStatus() {
       host.appendChild(holder);
       alignWithComposerActions(holder, host);
       fitSignatureStatusHolder(holder, host);
+      watchSignatureStatusFit(holder, host);
     } else if (paintSignatureStatusHolder(holder, target)) {
       fitSignatureStatusHolder(holder, host);
     }
