@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "Development tooling for the Intercom Support Assistant Chrome extension. The extension ships as plain files with no build step.",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "engines": {
     "node": ">=24"
   },

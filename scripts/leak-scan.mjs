@@ -35,6 +35,7 @@ const ALLOWED_HOSTS = [
   /^keepachangelog\.com$/,
   /^semver\.org$/,
   /^opensource\.org$/,
+  /^www\.apache\.org$/,
   /^playwright\.dev$/,
   /^chromewebstore\.google\.com$/,
   /^example\.(?:slack\.com|atlassian\.net)$/,
